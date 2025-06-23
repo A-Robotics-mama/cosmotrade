@@ -1,0 +1,232 @@
+<!-- templates/purchase_new.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Add Purchase - Cosmotrade CRM{% endblock %}
+
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+<style>
+.ui-autocomplete {
+    z-index: 1000;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-box me-2"></i>Add New Purchase</h4>
+                <div>
+                    <a href="{% url 'purchases:purchase_new' %}" class="btn btn-light btn-sm me-2"><i class="fas fa-plus me-1"></i>New Purchase</a>
+                    <a href="{% url 'purchases:purchase_list' %}" class="btn btn-light btn-sm"><i class="fas fa-list me-1"></i>View Purchases</a>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="supplier_input" class="form-label">Supplier:</label>
+                        <input type="text" name="supplier_input" id="supplier_input" class="form-control" placeholder="Search Supplier..." required>
+                        <input type="hidden" name="supplier_id" id="supplier_id">
+                    </div>
+                    <div class="mb-3">
+                        <label for="invoice_input" class="form-label">Invoice:</label>
+                        <input type="text" name="invoice_input" id="invoice_input" class="form-control" placeholder="Select Invoice..." required>
+                        <input type="hidden" name="invoice" id="invoice">
+                        <input type="hidden" name="import_id" id="import_id">
+                    </div>
+                    <div class="mb-3">
+                        <label for="product_input" class="form-label">Product:</label>
+                        <input type="text" name="product_input" id="product_input" class="form-control" placeholder="Search Product..." required>
+                        <input type="hidden" name="product_id" id="product_id">
+                    </div>
+                    <div class="mb-3">
+                        <label for="serial_number" class="form-label">Serial Number:</label>
+                        <input type="text" name="serial_number" id="serial_number" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label for="unit_price" class="form-label">Unit Price:</label>
+                        <input type="number" step="0.01" name="purchase_price" id="unit_price" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="stock_price" class="form-label">Stock Price:</label>
+                        <input type="text" step="0.01" name="stock_price" id="stock_price" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="purchase_vat" class="form-label">Purchase VAT:</label>
+                        <input type="text" step="0.01" name="vat" id="purchase_vat" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="qty" class="form-label">Quantity:</label>
+                        <input type="number" name="qty" id="qty" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="expiry_date" class="form-label">Expiry Date:</label>
+                        <input type="text" name="expiry_date" id="expiry_date" class="form-control" placeholder="DD/MM/YY (e.g., 28/05/25)">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" name="device" id="device" class="form-check-input">
+                        <label for="device" class="form-check-label">Device (has serial number)</label>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Add Purchase</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+$(document).ready(function () {
+    let supplierId = 0;
+    let costsPerEuro = 0;
+    let importVat = 0;
+    let invoiceEur = 0;
+
+    function clearFields() {
+        $("#invoice_input, #invoice, #import_id, #product_input, #product_id").val("");
+        $("#unit_price, #stock_price, #purchase_vat, #qty, #expiry_date").val("");
+        costsPerEuro = 0;
+        importVat = 0;
+        invoiceEur = 0;
+    }
+
+    // 🏷️ Supplier autocomplete
+    $("#supplier_input").autocomplete({
+        source: function (request, response) {
+            $.ajax({
+                url: "{% url 'base:supplier_autocomplete' %}",
+                dataType: "json",
+                data: { term: request.term },
+                success: response
+            });
+        },
+        minLength: 1,
+        select: function (event, ui) {
+            $("#supplier_input").val(ui.item.label);
+            $("#supplier_id").val(ui.item.value);
+            supplierId = ui.item.value;
+
+            clearFields();
+
+            // 🔁 Trigger invoice autocomplete after supplier is selected with empty term
+            $("#invoice_input").autocomplete("search", "");
+            return false;
+        },
+        change: function (event, ui) {
+            if (!ui.item) {
+                $("#supplier_input, #supplier_id").val("");
+                supplierId = 0;
+                clearFields();
+            }
+        }
+    }).autocomplete("instance")._renderItem = function (ul, item) {
+        return $("<li>").append("<div>" + item.label + "</div>").appendTo(ul);
+    };
+
+    // 📄 Invoice autocomplete
+    $("#invoice_input").autocomplete({
+        source: function (request, response) {
+            $.ajax({
+                url: "{% url 'base:invoices_autocomplete' %}",
+                dataType: "json",
+                data: {
+                    term: request.term,
+                    supplier_id: supplierId
+                },
+                success: response
+            });
+        },
+        minLength: 0,
+        select: function (event, ui) {
+            $("#invoice_input").val(ui.item.label);
+            $("#invoice").val(ui.item.value);  // Используем ui.item.value, где хранится imp.invoice
+            $("#import_id").val(ui.item.id);
+
+            costsPerEuro = ui.item.costs_per_euro;
+            importVat = ui.item.vat;
+            invoiceEur = ui.item.invoice_eur;
+
+            $("#product_input, #product_id").val("");
+            $("#unit_price, #stock_price, #purchase_vat, #qty, #expiry_date").val("");
+            return false;
+        },
+        change: function (event, ui) {
+            if (!ui.item) {
+                $("#invoice_input, #invoice, #import_id").val("");
+                costsPerEuro = 0;
+                importVat = 0;
+                invoiceEur = 0;
+            }
+        }
+    }).autocomplete("instance")._renderItem = function (ul, item) {
+        return $("<li>").append("<div>" + item.label + "</div>").appendTo(ul);
+    };
+
+    // 📦 Product autocomplete
+    $("#product_input").autocomplete({
+        source: function (request, response) {
+            $.ajax({
+                url: "{% url 'products:product_autocomplete' %}",
+                dataType: "json",
+                data: {
+                    term: request.term,
+                    supplier_id: supplierId
+                },
+                success: response
+            });
+        },
+        minLength: 1,
+        select: function (event, ui) {
+            $("#product_input").val(ui.item.label);
+            $("#product_id").val(ui.item.id);
+
+            $("#unit_price, #stock_price, #purchase_vat, #qty, #expiry_date").val("");
+            return false;
+        },
+        change: function (event, ui) {
+            if (!ui.item) {
+                $("#product_input, #product_id").val("");
+            }
+        }
+    }).autocomplete("instance")._renderItem = function (ul, item) {
+        return $("<li>").append("<div>" + item.label + "</div>").appendTo(ul);
+    };
+
+    // 💰 Расчёт stock_price и VAT при изменении unit_price
+    $("#unit_price").on("input", function () {
+        const purchasePrice = parseFloat($(this).val()) || 0;
+        if (purchasePrice > 0 && costsPerEuro > 0) {
+            const stockPrice = purchasePrice + (purchasePrice * costsPerEuro);
+            $("#stock_price").val(stockPrice.toFixed(2));
+            const vat = invoiceEur > 0 ? (importVat * (purchasePrice / invoiceEur)) : 0;
+            $("#purchase_vat").val(vat.toFixed(2));
+        } else {
+            $("#stock_price, #purchase_vat").val("");
+        }
+    });
+
+    // 📅 Дата окончания срока годности
+    $("#expiry_date").datepicker({
+        dateFormat: "dd/mm/yy",
+        changeMonth: true,
+        changeYear: true,
+        yearRange: "c-10:c+10"
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

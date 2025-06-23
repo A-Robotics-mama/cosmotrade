@@ -1,0 +1,172 @@
+<!-- templates/purchase_order_pdf.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Purchase Order {{ purchase_order.po_number }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #000;
+            font-size: 11pt;
+            line-height: 1.4;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+        }
+        .header img {
+            width: 317px; /* 40% от ширины A4 (794px) */
+        }
+        .header .title {
+            text-align: right;
+        }
+        .header .title h2 {
+            font-size: 14pt;
+            font-weight: 700;
+            margin: 0;
+            text-transform: uppercase;
+        }
+        .header .title p {
+            font-size: 10pt;
+            font-weight: 400;
+            margin: 5px 0 0 0;
+        }
+        .details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+        }
+        .details div {
+            width: 48%;
+        }
+        .details h3 {
+            font-size: 12pt;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+        }
+        .details p {
+            font-size: 10pt;
+            font-weight: 400;
+            margin: 5px 0;
+        }
+        .details p strong {
+            font-weight: 700;
+        }
+        .items h3 {
+            font-size: 12pt;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+        }
+        .items table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+        .items table th, .items table td {
+            border: 1px solid #000;
+            padding: 8px;
+            font-size: 10pt;
+            text-align: left;
+        }
+        .items table th {
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .items table td {
+            font-weight: 400;
+        }
+        .signature {
+            margin-top: 40px;
+            width: 50%;
+        }
+        .signature p {
+            font-size: 10pt;
+            font-weight: 400;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <img src="static/img/logo.png" alt="MS Cosmotrade Limited Logo">
+            <div class="title">
+                <h2>Purchase Order #{{ purchase_order.po_number }}</h2>
+                <p>{{ current_date }}</p>
+            </div>
+        </div>
+
+        <!-- Supplier and Buyer Details -->
+        <div class="details">
+            <div>
+                <h3>Supplier:</h3>
+                <p><strong>{{ purchase_order.supplier.legal_name }}</strong></p>
+                <p>{{ purchase_order.supplier.address|default:"N/A" }}</p>
+                <p>{{ purchase_order.supplier.phone|default:"N/A" }}</p>
+                <p>{{ purchase_order.supplier.email|default:"N/A" }}</p>
+            </div>
+            <div>
+                <h3>Buyer / Consignee:</h3>
+                <p><strong>MS Cosmotrade Limited</strong></p>
+                <p>Aiolou 8, Kokkonis Complex, Block F, app. 302</p>
+                <p>Germasogeia, 4041, Cyprus</p>
+                <p>VAT: CY10410284K</p>
+                <p>+35797780089, +35799779776</p>
+            </div>
+        </div>
+
+        <!-- Order Details -->
+        <div class="items">
+            <h3>Order Details:</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Supplier Code</th>
+                        <th>Item Description</th>
+                        <th>Quantity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td>{{ item.product.manufacturer_code|default:"—" }}</td>
+                            <td>{{ item.product.product_name }}</td>
+                            <td>{{ item.quantity }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Delivery Instructions -->
+        <div class="items">
+            <h3>Delivery Instructions:</h3>
+            <p><strong>Delivery Date:</strong> {{ purchase_order.delivery_date }}</p>
+            <p><strong>Delivery Address:</strong> {{ purchase_order.delivery_address }}</p>
+            <p><strong>Contact Person:</strong> {{ purchase_order.contact_person }}</p>
+        </div>
+
+        <!-- Signature -->
+        <div class="signature">
+            <p><strong>Created by:</strong> MS Cosmotrade CRM </p>
+            <p>Director</p>
+            <p>+35799779776</p>
+        </div>
+    </div>
+</body>
+</html>

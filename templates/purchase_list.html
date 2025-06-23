@@ -1,0 +1,208 @@
+<!-- /apps/templates/purchase_list.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Purchases List - Cosmotrade CRM{% endblock %}
+
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Purchases List</h2>
+    <div>
+      <a href="{% url 'purchases:purchase_new' %}" class="btn btn-success me-2">New Purchase</a>
+      <a href="{% url 'purchases:purchase_edit' %}" class="btn btn-warning me-2">Edit Purchase</a>
+      <a href="{% url 'base:dashboard' %}" class="btn btn-secondary">Return to Dashboard</a>
+    </div>
+  </div>
+
+  <form method="get" id="search-form" class="card p-4 shadow-sm mb-4">
+    <div class="mb-3">
+      <label for="supplier_input" class="form-label">Search by Supplier:</label>
+      <input type="text" name="supplier_input" id="supplier_input" class="form-control" placeholder="Enter supplier name..." value="{{ supplier_input }}">
+      <input type="hidden" name="supplier_id" id="supplier_id" value="{{ supplier_id }}">
+    </div>
+    <div class="mb-3">
+      <label for="product_input" class="form-label">Search by Product:</label>
+      <input type="text" name="product_input" id="product_input" class="form-control" placeholder="Enter product name..." value="{{ product_input }}">
+      <input type="hidden" name="product_id" id="product_id" value="{{ product_id }}">
+    </div>
+    <div class="mb-3">
+      <label for="invoice_input" class="form-label">Search by Invoice:</label>
+      <input type="text" name="invoice_input" id="invoice_input" class="form-control" placeholder="Enter invoice..." value="{{ invoice_input }}">
+      <input type="hidden" name="invoice" id="invoice_id" value="{{ invoice }}">
+    </div>
+  </form>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Product</th>
+        <th>Invoice</th>
+        <th>Serial Number</th>
+        <th>Purchase Price</th>
+        <th>Quantity</th>
+        <th>Stock Price</th>
+        <th>VAT (per unit)</th>
+        <th>Manager ID</th>
+        <th>Timestamp</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for purchase in purchases %}
+      <tr>
+        <td>{{ purchase.id }}</td>
+        <td>{{ purchase.product.product_name }}</td>
+        <td>{{ purchase.invoice }}</td>
+        <td>{{ purchase.serial_number|default:"None" }}</td>
+        <td>{{ purchase.purchase_price }}</td>
+        <td>{{ purchase.qty }}</td>
+        <td>{{ purchase.stock_price }}</td>
+        <td>{{ purchase.vat }}</td>
+        <td>{{ purchase.manager_id }}</td>
+        <td>{{ purchase.timestamp }}</td>
+        <td><a href="{% url 'purchases:purchase_edit_with_id' purchase_id=purchase.id %}" class="btn btn-warning btn-sm">Edit</a></td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="11">No purchases found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% block extra_scripts %}
+<script>
+$(document).ready(function() {
+  // Автозаполнение для Supplier
+  $("#supplier_input").autocomplete({
+    source: function(request, response) {
+      $.ajax({
+        url: "{% url 'base:supplier_autocomplete' %}",
+        dataType: "json",
+        data: { term: request.term },
+        success: function(data) {
+          response(data);
+        },
+        error: function(xhr, status, error) {
+          console.log("Supplier autocomplete error: " + error);
+        }
+      });
+    },
+    minLength: 1,
+    select: function(event, ui) {
+      $("#supplier_input").val(ui.item.label);
+      $("#supplier_id").val(ui.item.id);
+      $("#product_input").val("");
+      $("#product_id").val("");
+      $("#invoice_input").val("");
+      $("#invoice_id").val("");
+      $("#search-form").submit();
+      return false;
+    },
+    change: function(event, ui) {
+      if (!ui.item) {
+        $("#supplier_input").val("");
+        $("#supplier_id").val("");
+        $("#product_input").val("");
+        $("#product_id").val("");
+        $("#invoice_input").val("");
+        $("#invoice_id").val("");
+        $("#search-form").submit();
+      }
+    }
+  }).autocomplete("instance")._renderItem = function(ul, item) {
+    return $("<li>").append("<div>" + item.label + "</div>").appendTo(ul);
+  };
+
+  // Автозаполнение для Product
+  $("#product_input").autocomplete({
+    source: function(request, response) {
+      var supplier_id = $("#supplier_id").val();
+      if (!supplier_id) {
+        response([]);
+        return;
+      }
+      $.ajax({
+        url: "{% url 'products:product_autocomplete' %}",
+        dataType: "json",
+        data: { term: request.term, supplier_id: supplier_id },
+        success: function(data) {
+          response(data);
+        },
+        error: function(xhr, status, error) {
+          console.log("Product autocomplete error: " + error);
+        }
+      });
+    },
+    minLength: 1,
+    select: function(event, ui) {
+      $("#product_input").val(ui.item.label);
+      $("#product_id").val(ui.item.id);
+      $("#invoice_input").val("");
+      $("#invoice_id").val("");
+      $("#search-form").submit();
+      return false;
+    },
+    change: function(event, ui) {
+      if (!ui.item) {
+        $("#product_input").val("");
+        $("#product_id").val("");
+        $("#invoice_input").val("");
+        $("#invoice_id").val("");
+        $("#search-form").submit();
+      }
+    }
+  }).autocomplete("instance")._renderItem = function(ul, item) {
+    return $("<li>").append("<div>" + item.label + "</div>").appendTo(ul);
+  };
+
+  // Автозаполнение для Invoice
+  $("#invoice_input").autocomplete({
+    source: function(request, response) {
+      var supplier_id = $("#supplier_id").val();
+      if (!supplier_id) {
+        response([]);
+        return;
+      }
+      $.ajax({
+        url: "{% url 'base:invoices_autocomplete' %}",
+        dataType: "json",
+        data: { term: request.term, supplier_id: supplier_id },
+        success: function(data) {
+          response(data);
+        },
+        error: function(xhr, status, error) {
+          console.log("Invoice autocomplete error: " + error);
+        }
+      });
+    },
+    minLength: 1,
+    select: function(event, ui) {
+      $("#invoice_input").val(ui.item.label);
+      $("#invoice_id").val(ui.item.label.split(" ")[1]);
+      $("#search-form").submit();
+      return false;
+    },
+    change: function(event, ui) {
+      if (!ui.item) {
+        $("#invoice_input").val("");
+        $("#invoice_id").val("");
+        $("#search-form").submit();
+      }
+    }
+  }).autocomplete("instance")._renderItem = function(ul, item) {
+    return $("<li>").append("<div>" + item.label + "</div>").appendTo(ul);
+  };
+});
+</script>
+{% endblock %}
+{% endblock %}

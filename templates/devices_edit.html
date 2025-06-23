@@ -1,0 +1,118 @@
+<!-- templates/devices/devices_edit.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit Device - Cosmotrade CRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-cogs me-2"></i>Edit Device</h4>
+                <a href="{% url 'devices:devices_list' %}" class="btn btn-light btn-sm"><i class="fas fa-list me-1"></i>View Devices</a>
+            </div>
+            <div class="card-body p-4">
+                {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                {% endif %}
+
+                {% if message %}
+                    <div class="alert alert-success" role="alert">
+                        {{ message }}
+                    </div>
+                {% endif %}
+
+                {% if not device %}
+                    <form method="get" class="mb-4">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="supplier_code" class="form-label">Supplier Code:</label>
+                                <input type="text" id="supplier_code" name="supplier_code" class="form-control" value="{{ supplier_code }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="serial_number" class="form-label">Serial Number:</label>
+                                <input type="text" id="serial_number" name="serial_number" class="form-control" value="{{ serial_number }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="customer_name" class="form-label">Customer Name:</label>
+                                <input type="text" id="customer_name" name="customer_name" class="form-control" value="{{ customer_name }}">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                    </form>
+
+                    {% if devices %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="device_id" class="form-label">Select Device:</label>
+                                <select name="device_id" id="device_id" class="form-select" required>
+                                    <option value="">-- Select Device --</option>
+                                    {% for device in devices %}
+                                        <option value="{{ device.id }}">{{ device.serial_number }} - {{ device.supplier_id.legal_name }} ({{ device.supplier_id.supplier_code }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" name="edit" class="btn btn-primary"><i class="fas fa-edit me-2"></i>Edit Device</button>
+                        </form>
+                    {% else %}
+                        <p class="text-center text-muted">No devices found.</p>
+                    {% endif %}
+                {% else %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="device_id" value="{{ device.id }}">
+                        <div class="mb-3">
+                            <label for="supplier_id" class="form-label">Supplier:</label>
+                            <select name="supplier_id" id="supplier_id" class="form-select" required>
+                                {% for supplier in device.supplier_id.supplier_id.all %}
+                                    <option value="{{ supplier.supplier_id }}" {% if supplier.supplier_id == device.supplier_id.supplier_id %}selected{% endif %}>
+                                        {{ supplier.legal_name }} ({{ supplier.supplier_code }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="serial_number" class="form-label">Serial Number:</label>
+                            <input type="text" name="serial_number" id="serial_number" class="form-control" value="{{ device.serial_number }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="purchase_date" class="form-label">Purchase Date:</label>
+                            <input type="date" name="purchase_date" id="purchase_date" class="form-control" value="{{ device.purchase_date }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="sale_date" class="form-label">Sale Date:</label>
+                            <input type="date" name="sale_date" id="sale_date" class="form-control" value="{{ device.sale_date|default_if_none:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="customer_id" class="form-label">Customer:</label>
+                            <select name="customer_id" id="customer_id" class="form-select">
+                                <option value="">-- Select Customer --</option>
+                                {% for customer in device.customer_id.customer_id.all %}
+                                    <option value="{{ customer.customer_id }}" {% if customer.customer_id == device.customer_id.customer_id %}selected{% endif %}>
+                                        {{ customer.fullname }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="installation_date" class="form-label">Installation Date:</label>
+                            <input type="date" name="installation_date" id="installation_date" class="form-control" value="{{ device.installation_date|default_if_none:'' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes:</label>
+                            <textarea name="notes" id="notes" class="form-control" rows="3">{{ device.notes|default_if_none:'' }}</textarea>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" name="update" class="btn btn-primary"><i class="fas fa-save me-2"></i>Update Device</button>
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

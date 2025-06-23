@@ -1,0 +1,69 @@
+<!-- templates/imports/import_list.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Import List - Cosmotrade CRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-ship me-2"></i>Import List</h4>
+                <div>
+                    <a href="{% url 'imports:import_new' %}" class="btn btn-light btn-sm"><i class="fas fa-plus me-1"></i>Add Import</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="get" class="mb-3">
+                    <div class="input-group">
+                        <input type="text" name="supplier_code" class="form-control" placeholder="Search by Supplier Code" value="{{ supplier_code }}">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                    </div>
+                </form>
+
+                {% if imports %}
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Import ID</th>
+                                <th>Supplier</th>
+                                <th>Date</th>
+                                <th>Invoice</th>
+                                <th>Invoice (€)</th>
+                                <th>Total Costs (€)</th>
+                                <th>Summary Import (€)</th>
+                                <th>Costs per Euro</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for imp in imports %}
+                                <tr>
+                                    <td>{{ imp.import_id }}</td>
+                                    <td>{{ imp.supplier.legal_name }} ({{ imp.supplier.supplier_code }})</td>
+                                    <td>{{ imp.date }}</td>
+                                    <td>{{ imp.invoice }}</td>
+                                    <td>{{ imp.invoice_eur }}</td>
+                                    <td>{{ imp.total_costs }}</td>
+                                    <td>{{ imp.summary_import }}</td>
+                                    <td>{{ imp.costs_per_euro }}</td>
+                                    <td>
+                                        <a href="{% url 'imports:import_edit' %}?import_id={{ imp.import_id }}" class="btn btn-sm btn-primary"><i class="fas fa-edit me-1"></i>Edit</a>
+                                        <form method="post" action="{% url 'imports:import_delete' imp.import_id %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this import?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash me-1"></i>Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="text-center text-muted">No imports found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

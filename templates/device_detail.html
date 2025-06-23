@@ -1,0 +1,112 @@
+<!-- templates/devices/device_detail.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Device Detail - Cosmotrade CRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-cogs me-2"></i>Device Detail: {{ device.serial_number }}</h4>
+                <a href="{% url 'devices:devices_list' %}" class="btn btn-light btn-sm"><i class="fas fa-arrow-left me-1"></i>Back to List</a>
+            </div>
+            <div class="card-body p-4">
+                <h5>Device Details</h5>
+                <p><strong>Serial Number:</strong> {{ device.serial_number }}</p>
+                <p><strong>Supplier:</strong> {{ device.supplier_id.legal_name }} ({{ device.supplier_id.supplier_code }})</p>
+                <p><strong>Purchase Date:</strong> {{ device.purchase_date }}</p>
+                <p><strong>Sale Date:</strong> {{ device.sale_date|default:"—" }}</p>
+                <p><strong>Customer:</strong> {{ device.customer_id.fullname|default:"—" }}</p>
+                <p><strong>Installation Date:</strong> {{ device.installation_date|default:"—" }}</p>
+                <p><strong>Notes:</strong> {{ device.notes|default:"—" }}</p>
+
+                <h5 class="mt-4">Services</h5>
+                {% if services %}
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Service Date</th>
+                                <th>Description</th>
+                                <th>Technician</th>
+                                <th>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for service in services %}
+                                <tr>
+                                    <td>{{ service.service_date }}</td>
+                                    <td>{{ service.description }}</td>
+                                    <td>{{ service.technician|default:"—" }}</td>
+                                    <td>{{ service.created_at }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="text-center text-muted">No services recorded.</p>
+                {% endif %}
+
+                <h5 class="mt-4">Part Replacements</h5>
+                {% if part_replacements %}
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Part</th>
+                                <th>Replacement Date</th>
+                                <th>Quantity</th>
+                                <th>Notes</th>
+                                <th>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for replacement in part_replacements %}
+                                <tr>
+                                    <td>{{ replacement.part.product_name }}</td>
+                                    <td>{{ replacement.replacement_date }}</td>
+                                    <td>{{ replacement.quantity }}</td>
+                                    <td>{{ replacement.notes|default:"—" }}</td>
+                                    <td>{{ replacement.created_at }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="text-center text-muted">No part replacements recorded.</p>
+                {% endif %}
+
+                <h5 class="mt-4">Monitoring Records</h5>
+                {% if monitorings %}
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Monitoring Date</th>
+                                <th>Hours of Operation</th>
+                                <th>Pulse Count</th>
+                                <th>Other Parameters</th>
+                                <th>Notes</th>
+                                <th>Created At</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for monitoring in monitorings %}
+                                <tr>
+                                    <td>{{ monitoring.monitoring_date }}</td>
+                                    <td>{{ monitoring.hours_of_operation }}</td>
+                                    <td>{{ monitoring.pulse_count }}</td>
+                                    <td>{{ monitoring.other_parameters|default:"—" }}</td>
+                                    <td>{{ monitoring.notes|default:"—" }}</td>
+                                    <td>{{ monitoring.created_at }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="text-center text-muted">No monitoring records found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

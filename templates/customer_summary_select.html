@@ -1,0 +1,32 @@
+<!-- /templates/customer_summary_select.html -->
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Select Customer for Summary{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Select Customer for Summary</h2>
+    <div>
+      <a href="{% url 'base:dashboard' %}" class="btn btn-secondary">Return to Dashboard</a>
+    </div>
+  </div>
+
+  <form method="post" class="card p-4 shadow-sm">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="customer_id" class="form-label">Select Customer:</label>
+      <select name="customer_id" id="customer_id" class="form-select" required>
+        <option value="">-- Select a Customer --</option>
+        {% for customer in customers %}
+          <option value="{{ customer.customer_id }}">{{ customer.fullname }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">View Summary</button>
+    <a href="{% url 'customers:customer_list' %}" class="btn btn-secondary ms-2">Back to Customer List</a>
+  </form>
+</div>
+{% endblock %}

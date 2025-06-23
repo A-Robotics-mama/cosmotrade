@@ -1,0 +1,237 @@
+<!-- templates/purchase_order_form.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+    {% if purchase_order %}
+        Edit Purchase Order {{ purchase_order.po_number }} - Cosmotrade CRM
+    {% else %}
+        Create Purchase Order - Cosmotrade CRM
+    {% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+<style>
+.ui-autocomplete {
+    z-index: 1000;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            {% if purchase_order %}
+                Edit Purchase Order {{ purchase_order.po_number }}
+            {% else %}
+                Create New Purchase Order
+            {% endif %}
+        </h2>
+        <div>
+            <a href="{% url 'orders:purchase_order_list' %}" class="btn btn-secondary">Back to List</a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'success' %}alert-success{% else %}alert-danger{% endif %}" role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm p-4">
+        <form method="post">
+            {% csrf_token %}
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p>{{ field.label }}: {{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="mb-3">
+                <label for="{{ form.po_number.id_for_label }}" class="form-label">PO Number:</label>
+                {{ form.po_number }}
+            </div>
+            <div class="mb-3">
+                <label for="{{ form.supplier.id_for_label }}" class="form-label">Supplier:</label>
+                {{ form.supplier }}
+            </div>
+            <div class="mb-3">
+                <label for="{{ form.delivery_address.id_for_label }}" class="form-label">Delivery Address:</label>
+                {{ form.delivery_address }}
+            </div>
+            <div class="mb-3">
+                <label for="{{ form.contact_person.id_for_label }}" class="form-label">Contact Person:</label>
+                {{ form.contact_person }}
+            </div>
+
+            <h3 class="mt-4 mb-3">Items</h3>
+            {{ formset.management_form }}
+            {% if formset.errors %}
+                <div class="alert alert-danger">
+                    {% for form in formset %}
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <p>Item {{ forloop.parentloop.counter }} - {{ field.label }}: {{ error }}</p>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <p>Item {{ forloop.counter }}: {{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div id="formset-container">
+                {% for form in formset %}
+                    <div class="row mb-3 item-formset">
+                        <div class="col-md-5">
+                            <label for="{{ form.product_autocomplete.id_for_label }}" class="form-label">Product:</label>
+                            {{ form.product_autocomplete }}
+                            {{ form.product_id }}
+                            {{ form.id }}
+                        </div>
+                        <div class="col-md-2">
+                            <label for="{{ form.quantity.id_for_label }}" class="form-label">Quantity:</label>
+                            {{ form.quantity }}
+                        </div>
+                        <div class="col-md-3">
+                            {% if form.instance.pk %}
+                                <label class="form-label"> </label>
+                                <div>
+                                    <button type="submit" name="delete_{{ form.instance.pk }}" class="btn btn-danger btn-sm">Delete</button>
+                                </div>
+                            {% else %}
+                                <button type="button" class="btn btn-danger btn-sm mt-4 remove-form-row"><i class="fas fa-trash"></i> Remove</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="button" id="add-form-row" class="btn btn-success btn-sm mb-3"><i class="fas fa-plus me-1"></i>Add Item</button>
+
+            <div class="d-flex justify-content-end mt-4">
+                <a href="{% url 'orders:purchase_order_list' %}" class="btn btn-secondary me-2"><i class="fas fa-arrow-left me-2"></i>Back</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Save Order</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+$(document).ready(function() {
+    let formCount = parseInt($('#id_form-TOTAL_FORMS').val());
+    let supplierId = $("#id_supplier").val();
+
+    // Обновляем supplierId при изменении поставщика
+    $("#id_supplier").change(function() {
+        supplierId = $(this).val();
+        // Очищаем автозаполнение продуктов при смене поставщика
+        $(".product-autocomplete").val("");
+        $(".product-id").val("");
+    });
+
+    // Инициализация автозаполнения для существующих форм
+    function initAutocomplete(element) {
+        element.autocomplete({
+            source: function(request, response) {
+                if (!supplierId) {
+                    response([]);
+                    return;
+                }
+                $.ajax({
+                    url: "{% url 'products:product_autocomplete' %}",
+                    dataType: "json",
+                    data: {
+                        term: request.term,
+                        supplier_id: supplierId
+                    },
+                    success: response,
+                    error: function(xhr, status, error) {
+                        console.error("Autocomplete error:", error);
+                        response([]);
+                    }
+                });
+            },
+            minLength: 1,
+            select: function(event, ui) {
+                $(this).val(ui.item.label);
+                $(this).siblings(".product-id").val(ui.item.id);
+                return false;
+            },
+            change: function(event, ui) {
+                if (!ui.item) {
+                    $(this).val("");
+                    $(this).siblings(".product-id").val("");
+                }
+            }
+        }).autocomplete("instance")._renderItem = function(ul, item) {
+            return $("<li>").append("<div>" + item.label + "</div>").appendTo(ul);
+        };
+    }
+
+    // Инициализируем автозаполнение для существующих форм
+    $(".product-autocomplete").each(function() {
+        initAutocomplete($(this));
+    });
+
+    $("#add-form-row").click(function() {
+        let form = $('.item-formset:last').clone();
+        form.find('input').each(function() {
+            let name = $(this).attr('name').replace('-' + (formCount-1) + '-', '-' + formCount + '-');
+            let id = 'id_' + name;
+            $(this).attr({'name': name, 'id': id}).val('');
+            if ($(this).hasClass('product-autocomplete')) {
+                $(this).removeData('ui-autocomplete');
+            }
+        });
+        form.find('.remove-form-row').show();
+        formCount++;
+        $('#id_form-TOTAL_FORMS').val(formCount);
+        $('#formset-container').append(form);
+        form.find('.product-autocomplete').each(function() {
+            initAutocomplete($(this));
+        });
+    });
+
+    $(document).on('click', '.remove-form-row', function() {
+        $(this).closest('.item-formset').remove();
+        formCount--;
+        $('#id_form-TOTAL_FORMS').val(formCount);
+        $('#formset-container .item-formset').each(function(index) {
+            $(this).find('input').each(function() {
+                let name = $(this).attr('name').replace(/-\d+-/, '-' + index + '-');
+                let id = 'id_' + name;
+                $(this).attr({'name': name, 'id': id});
+            });
+        });
+        // Переинициализируем автозаполнение после удаления
+        $(".product-autocomplete").each(function() {
+            initAutocomplete($(this));
+        });
+    });
+
+    // Отладка перед отправкой формы
+    $("form").submit(function(event) {
+        console.log("Form data before submission:");
+        $(this).find('.product-autocomplete').each(function(index) {
+            console.log("Item " + (index + 1) + " - Product: " + $(this).val());
+            console.log("Item " + (index + 1) + " - Product ID: " + $(this).siblings(".product-id").val());
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,154 @@
+<!-- templates/base.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cosmotrade CRM{% endblock %}</title>
+
+    {% load static %}
+
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Font Awesome -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+<!-- jQuery UI CSS -->
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+
+<!-- Custom CSS -->
+<link rel="stylesheet" href="{% static 'css/styles.css' %}?v=2">
+
+{% block extra_head %}{% endblock %}
+
+<!-- Подключение главного JS как модуля -->
+<script type="module" src="{% static 'js/main.js' %}?v=1"></script>
+
+</head>
+<body>
+    <!-- Навигационная панель -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background: linear-gradient(90deg, #1a3c34, #2e5b52);">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <img src="{% static 'img/logo.png' %}" alt="Cosmotrade Logo" style="height: 50px;">
+                <span class="ms-2 d-none d-lg-inline">Cosmotrade CRM</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+
+                    <!-- Dashboard -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'base:dashboard' %}">
+                            <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+                        </a>
+                    </li>
+
+                    <!-- Customers -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="customersDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-friends me-1"></i> Customers
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="customersDropdown">
+                            <li><a class="dropdown-item" href="{% url 'customers:customer_new' %}"><i class="fas fa-user-plus me-1"></i> New Customer</a></li>
+                            <li><a class="dropdown-item" href="{% url 'customers:customer_edit' %}"><i class="fas fa-user-edit me-1"></i> Edit Customer</a></li>
+                            <li><a class="dropdown-item" href="{% url 'customers:customer_list' %}"><i class="fas fa-users me-1"></i> Customer List</a></li>
+                            <li><a class="dropdown-item" href="{% url 'customers:customer_summary_select' %}"><i class="fas fa-chart-line me-1"></i> Customer Summary</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Products -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="productsDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-box-open me-1"></i> Products
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="productsDropdown">
+                            <li><a class="dropdown-item" href="{% url 'products:product_list' %}"><i class="fas fa-list me-1"></i> Product List</a></li>
+                            <li><a class="dropdown-item" href="{% url 'products:product_create' %}"><i class="fas fa-plus me-1"></i> Add Product</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'stock:stock_list' %}"><i class="fas fa-warehouse me-1"></i> Stock</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Suppliers -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'suppliers:supplier_list' %}">
+                            <i class="fas fa-building me-1"></i> Suppliers
+                        </a>
+                    </li>
+
+                    <!-- Purchases -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="purchasesDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-shopping-cart me-1"></i> Purchases
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="purchasesDropdown">
+                            <li><a class="dropdown-item" href="{% url 'orders:purchase_order_create' %}"><i class="fas fa-plus me-1"></i> New Order</a></li>
+                            <li><a class="dropdown-item" href="{% url 'orders:purchase_order_list' %}"><i class="fas fa-list me-1"></i> Order List</a></li>
+                            <li><a class="dropdown-item" href="{% url 'imports:import_new' %}"><i class="fas fa-ship me-1"></i> New Import</a></li>
+                            <li><a class="dropdown-item" href="{% url 'imports:import_list' %}"><i class="fas fa-list me-1"></i> Import List</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'purchases:purchase_new' %}"><i class="fas fa-box me-1"></i> New Purchase</a></li>
+                            <li><a class="dropdown-item" href="{% url 'purchases:purchase_list' %}"><i class="fas fa-list me-1"></i> Purchase List</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Sales -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="salesDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-hand-holding-usd me-1"></i> Sales
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="salesDropdown">
+                            <li><a class="dropdown-item" href="{% url 'sales:sale_retail' %}"><i class="fas fa-plus me-1"></i> New Retail Sale</a></li>
+                            <li><a class="dropdown-item" href="{% url 'sales:new_invoice_sale' %}"><i class="fas fa-plus me-1"></i> New Invoice Sale</a></li>
+                            <li><a class="dropdown-item" href="{% url 'reports:quotation_list' %}"><i class="fas fa-list me-1"></i> Quotation List</a></li>
+                        </ul>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Сообщения -->
+    <div class="container-fluid mt-3">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <!-- Контент -->
+    <div class="container-fluid content mt-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Футер -->
+    <footer class="bg-dark text-white text-center py-3 mt-auto">
+        <div class="container">
+            <p class="mb-0">© 2025 Cosmotrade CRM. All Rights Reserved.</p>
+            <p class="mb-0">
+                <a href="mailto:support@cosmotrade-ms.com" class="text-white text-decoration-none">
+                    <i class="fas fa-envelope me-1"></i> support@cosmotrade-ms.com
+                </a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- JS Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

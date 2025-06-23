@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit Customer{% endblock %}
+
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Edit Customer</h2>
+    <div>
+      <a href="{% url 'customers:customer_new' %}" class="btn btn-success me-2">New Customer</a>
+      <a href="{% url 'customers:customer_edit' %}" class="btn btn-warning me-2">Edit Customer</a>
+      <a href="{% url 'customers:customer_list' %}" class="btn btn-info me-2">View Customers</a>
+      <a href="{% url 'customers:customer_summary_select' %}" class="btn btn-info me-2">Customer Summary</a>
+      <a href="{% url 'base:dashboard' %}" class="btn btn-secondary">Return to Dashboard</a>
+    </div>
+  </div>
+
+  <form method="get" id="filter-form" class="row g-3 align-items-end">
+    <div class="col-md-4">
+      <label for="fullname_input" class="form-label">Search by Full Name:</label>
+      <input type="text" name="fullname" id="fullname_input" class="form-control" value="{{ fullname }}" placeholder="Search by Full Name...">
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary w-100 mt-4">Search</button>
+    </div>
+  </form>
+
+  {% if customers %}
+    <form method="post" class="card p-4 shadow-sm mt-4">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="customer_select" class="form-label">Select Customer to Edit:</label>
+        <select name="customer_id" id="customer_select" class="form-select" required>
+          <option value="">-- Select a Customer --</option>
+          {% for customer in customers %}
+            <option value="{{ customer.customer_id }}">{{ customer.fullname }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" name="edit" class="btn btn-warning">Edit Selected</button>
+    </form>
+  {% endif %}
+
+  {% if customer %}
+    <h3 class="mt-4">Edit Customer: {{ customer.fullname }}</h3>
+    <form method="post" id="edit-customer-form" class="card p-4 shadow-sm">
+      {% csrf_token %}
+      <input type="hidden" name="customer_id" value="{{ customer.customer_id }}">
+      <div class="mb-3">
+        <label for="fullname" class="form-label">Full Name:</label>
+        <input type="text" name="fullname" id="fullname" class="form-control" value="{{ customer.fullname }}" required>
+      </div>
+      <div class="mb-3">
+        <label for="legal_name" class="form-label">Legal Name:</label>
+        <input type="text" name="legal_name" id="legal_name" class="form-control" value="{{ customer.legal_name }}">
+      </div>
+      <div class="mb-3">
+        <label for="group_input_edit" class="form-label">Group:</label>
+        <input type="text" name="group_input" id="group_input_edit" class="form-control" value="{{ customer.group.group_desc }}" placeholder="Search Group...">
+        <input type="hidden" name="group_id" id="group_id_edit" value="{{ customer.group.group_id }}">
+      </div>
+      <div class="mb-3">
+        <label for="country_iso_input_edit" class="form-label">Country ISO:</label>
+        <input type="text" name="country_iso_input" id="country_iso_input_edit" class="form-control" value="{{ customer.country_iso.country_iso }}" placeholder="Search Country ISO..." required>
+        <input type="hidden" name="country_iso" id="country_iso_edit" value="{{ customer.country_iso.country_iso }}" required>
+      </div>
+      <div class="mb-3">
+        <label for="country_code_edit" class="form-label">Country Code:</label>
+        <input type="text" name="country_code" id="country_code_edit" class="form-control" value="{{ customer.country_code }}" readonly required>
+      </div>
+      <div class="mb-3">
+        <label for="district_input_edit" class="form-label">District:</label>
+        <input type="text" name="district_input" id="district_input_edit" class="form-control" value="{{ customer.district_iso.district_name }}" placeholder="Search District...">
+        <input type="hidden" name="district_iso" id="district_iso_edit" value="{{ customer.district_iso.district_iso }}">
+      </div>
+      <div class="mb-3">
+        <label for="town_input_edit" class="form-label">Town:</label>
+        <input type="text" name="town_input" id="town_input_edit" class="form-control" value="{{ customer.town.town_name }}" placeholder="Search Town...">
+        <input type="hidden" name="town_id" id="town_id_edit" value="{{ customer.town.town_id }}">
+      </div>
+      <div class="mb-3">
+        <label for="area_input_edit" class="form-label">Area:</label>
+        <input type="text" name="area_input" id="area_input_edit" class="form-control" value="{{ customer.area_id.area_desc }}" placeholder="Search Area...">
+        <input type="hidden" name="area_id" id="area_id_edit" value="{{ customer.area_id.area_id }}">
+      </div>
+      <div class="mb-3">
+        <label for="street_address" class="form-label">Street Address:</label>
+        <input type="text" name="street_address" id="street_address" class="form-control" value="{{ customer.street_address }}" required>
+      </div>
+      <div class="mb-3">
+        <label for="postcode" class="form-label">Postcode:</label>
+        <input type="text" name="postcode" id="postcode" class="form-control" value="{{ customer.postcode }}" required>
+      </div>
+      <div class="mb-3">
+        <label for="landline" class="form-label">Landline:</label>
+        <input type="text" name="landline" id="landline" class="form-control" value="{{ customer.landline }}">
+      </div>
+      <div class="mb-3">
+        <label for="mobile" class="form-label">Mobile:</label>
+        <input type="text" name="mobile" id="mobile" class="form-control" value="{{ customer.mobile }}">
+      </div>
+      <div class="mb-3">
+        <label for="email_edit" class="form-label">Email:</label>
+        <input type="email" name="email" id="email_edit" class="form-control" value="{{ customer.email|default_if_none:'' }}">
+      </div>
+      <div class="mb-3">
+        <label for="customer_url" class="form-label">Customer URL:</label>
+        <input type="text" name="customer_url" id="customer_url" class="form-control" value="{{ customer.customer_url }}">
+      </div>
+      <div class="mb-3">
+        <label for="birthday" class="form-label">Birthday:</label>
+        <input type="date" name="birthday" id="birthday" class="form-control" value="{{ customer.birthday|date:'Y-m-d' }}">
+      </div>
+      <div class="mb-3">
+        <label for="nameday" class="form-label">Nameday:</label>
+        <input type="date" name="nameday" id="nameday" class="form-control" value="{{ customer.nameday|date:'Y-m-d' }}">
+      </div>
+      <div class="mb-3">
+        <label for="notes" class="form-label">Notes:</label>
+        <textarea name="notes" id="notes" class="form-control">{{ customer.notes }}</textarea>
+      </div>
+      <div class="mb-3">
+        <label for="vat" class="form-label">VAT:</label>
+        <input type="text" name="vat" id="vat" class="form-control" value="{{ customer.vat }}">
+      </div>
+      <button type="submit" name="update" class="btn btn-primary">Update Customer</button>
+    </form>
+  {% endif %}
+
+{% block extra_scripts %}
+<script>
+  $(document).ready(function() {
+    console.log("Document ready in customer_edit.html");
+
+    // Проверка формата email перед отправкой формы
+    $("#edit-customer-form").on('submit', function(event) {
+      var email = $("#email_edit").val();
+      if (email && email.trim() !== "" && email !== "None" && !email.includes('@')) {
+        alert("Please include '@' in the email address. For example: user@domain.com");
+        event.preventDefault();
+        return false;
+      }
+    });
+
+    // Автодополнение для Group
+    console.log("Initializing group_input_edit autocomplete");
+    $("#group_input_edit").autocomplete({
+      source: function(request, response) {
+        $.ajax({
+          url: "{% url 'base:group_autocomplete' %}",
+          dataType: "json",
+          data: { term: request.term },
+          success: function(data) {
+            console.log("Group autocomplete data received:", data);
+            response(data);
+          },
+          error: function(xhr, status, error) {
+            console.log("Group autocomplete error:", error);
+          }
+        });
+      },
+      minLength: 1,
+      select: function(event, ui) {
+        console.log("Group selected:", ui.item);
+        $("#group_input_edit").val(ui.item.label);
+        $("#group_id_edit").val(ui.item.value);
+        return false;
+      },
+      change: function(event, ui) {
+        console.log("Group change:", ui.item);
+        if (!ui.item) {
+          $("#group_input_edit").val("");
+          $("#group_id_edit").val("");
+        }
+      }
+    }).autocomplete("instance")._renderItem = function(ul, item) {
+      return $("<li>").append("<div>" + item.label + "</div>").appendTo(ul);
+    };
+
+    // Автодополнение для Country ISO
+    console.log("Initializing country_iso_input_edit autocomplete");
+    $("#country_iso_input_edit").autocomplete({
+      source: function(request, response) {
+        $.ajax({
+          url: "{% url 'base:country_autocomplete' %}",
+          dataType: "json",
+          data: { term: request.term },
+          success: function(data) {
+            console.log("Country autocomplete data received:", data);
+            response(data);
+          },
+          error: function(xhr, status, error) {
+            console.log("Country autocomplete error:", error);
+          }
+        });
+      },
+      minLength: 1,
+      select: function(event, ui) {
+        console.log("Country selected:", ui.item);
+        $("#country_iso_input_edit").val(ui.item.label);
+        $("#country_iso_edit").val(ui.item.value);
+        $("#country_code_edit").val(ui.item.country_code);
+        return false;
+      },
+      change: function(event, ui) {
+        console.log("Country change:", ui.item);
+        if (!ui.item) {
+          $("#country_iso_input_edit").val("");
+          $("#country_iso_edit").val("");
+          $("#country_code_edit").val("");
+        }
+      }
+    }).autocomplete("instance")._renderItem = function(ul, item) {
+      return $("<li>").append("<div>" + item.label + "</div>").appendTo(ul);
+    };
+
+    // Автодополнение для District
+    console.log("Initializing district_input_edit autocomplete");
+    $("#district_input_edit").autocomplete({
+      source: function(request, response) {
+        $.ajax({
+          url: "{% url 'base:district_autocomplete' %}",
+          dataType: "json",
+          data: { term: request.term },
+          success: function(data) {
+            console.log("District autocomplete data received:", data);
+            response(data);
+          },
+          error: function(xhr, status, error) {
+            console.log("District autocomplete error:", error);
+          }
+        });
+      },
+      minLength: 1,
+      select: function(event, ui) {
+        console.log("District selected:", ui.item);
+        $("#district_input_edit").val(ui.item.label);
+        $("#district_iso_edit").val(ui.item.value);
+        return false;
+      },
+      change: function(event, ui) {
+        console.log("District change:", ui.item);
+        if (!ui.item) {
+          $("#district_input_edit").val("");
+          $("#district_iso_edit").val("");
+        }
+      }
+    }).autocomplete("instance")._renderItem = function(ul, item) {
+      return $("<li>").append("<div>" + item.label + "</div>").appendTo(ul);
+    };
+
+    // Автодополнение для Town
+    console.log("Initializing town_input_edit autocomplete");
+    $("#town_input_edit").autocomplete({
+      source: function(request, response) {
+        $.ajax({
+          url: "{% url 'base:town_autocomplete' %}",
+          dataType: "json",
+          data: { term: request.term },
+          success: function(data) {
+            console.log("Town autocomplete data received:", data);
+            response(data);
+          },
+          error: function(xhr, status, error) {
+            console.log("Town autocomplete error:", error);
+          }
+        });
+      },
+      minLength: 1,
+      select: function(event, ui) {
+        console.log("Town selected:", ui.item);
+        $("#town_input_edit").val(ui.item.label);
+        $("#town_id_edit").val(ui.item.value);
+        return false;
+      },
+      change: function(event, ui) {
+        console.log("Town change:", ui.item);
+        if (!ui.item) {
+          $("#town_input_edit").val("");
+          $("#town_id_edit").val("");
+        }
+      }
+    }).autocomplete("instance")._renderItem = function(ul, item) {
+      return $("<li>").append("<div>" + item.label + "</div>").appendTo(ul);
+    };
+
+    // Автодополнение для Area
+    console.log("Initializing area_input_edit autocomplete");
+    $("#area_input_edit").autocomplete({
+      source: function(request, response) {
+        $.ajax({
+          url: "{% url 'base:area_autocomplete' %}",
+          dataType: "json",
+          data: { term: request.term },
+          success: function(data) {
+            console.log("Area autocomplete data received:", data);
+            response(data);
+          },
+          error: function(xhr, status, error) {
+            console.log("Area autocomplete error:", error);
+          }
+        });
+      },
+      minLength: 1,
+      select: function(event, ui) {
+        console.log("Area selected:", ui.item);
+        $("#area_input_edit").val(ui.item.label);
+        $("#area_id_edit").val(ui.item.value);
+        return false;
+      },
+      change: function(event, ui) {
+        console.log("Area change:", ui.item);
+        if (!ui.item) {
+          $("#area_input_edit").val("");
+          $("#area_id_edit").val("");
+        }
+      }
+    }).autocomplete("instance")._renderItem = function(ul, item) {
+      return $("<li>").append("<div>" + item.label + "</div>").appendTo(ul);
+    };
+  });
+</script>
+{% endblock %}
+{% endblock %}

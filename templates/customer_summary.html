@@ -1,0 +1,153 @@
+<!-- /templates/customer_summary.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Customer Summary - {{ customer.fullname }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Customer Summary for {{ customer.fullname }}</h2>
+    <div>
+      <a href="{% url 'customers:customer_list' %}" class="btn btn-info me-2">View Customers</a>
+      <a href="{% url 'base:dashboard' %}" class="btn btn-secondary">Return to Dashboard</a>
+    </div>
+  </div>
+
+  <!-- Фильтры -->
+  <form method="get" class="row g-3 align-items-end mb-4">
+    <div class="col-md-3">
+      <label for="product_id" class="form-label">Product:</label>
+      <select name="product_id" id="product_id" class="form-select">
+        <option value="">All Products</option>
+        {% for product in products %}
+        <option value="{{ product.product_id }}" {% if filter_product_id == product.product_id|stringformat:"s" %}selected{% endif %}>
+          {{ product.product_name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label for="start_date" class="form-label">Start Date:</label>
+      <input type="date" name="start_date" id="start_date" class="form-control" value="{{ filter_start_date }}">
+    </div>
+    <div class="col-md-3">
+      <label for="end_date" class="form-label">End Date:</label>
+      <input type="date" name="end_date" id="end_date" class="form-control" value="{{ filter_end_date }}">
+    </div>
+    <div class="col-md-3">
+      <button type="submit" class="btn btn-primary w-100 mt-4">Filter</button>
+    </div>
+  </form>
+
+  <!-- Блок розничных покупок -->
+  <div class="mb-5">
+    <h3>Retail Purchases</h3>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead class="table-light">
+          <tr>
+            <th>Date</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Price per Unit</th>
+            <th>Total Amount</th>
+            <th>Profit</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sale in retail_sales %}
+            <tr>
+              <td>{{ sale.sell_date }}</td>
+              <td>{{ sale.product.product_name }}</td>
+              <td>{{ sale.qty }}</td>
+              <td>€{{ sale.sell_price|floatformat:2 }}</td>
+              <td>€{{ sale.total_with_vat|floatformat:2 }}</td>
+              <td>€{{ sale.profit_wo_vat|floatformat:2 }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6">No retail purchases found for this customer.</td>
+            </tr>
+          {% endfor %}
+          <tr class="total-row" style="font-weight: bold; background-color: #e6f3ff;">
+            <td colspan="4"><strong>Total</strong></td>
+            <td>€{{ total_retail_amount|floatformat:2 }}</td>
+            <td>€{{ total_retail_profit|floatformat:2 }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Блок покупок через профрму -->
+  <div class="mb-5">
+    <h3>Quotation Purchases</h3>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead class="table-light">
+          <tr>
+            <th>Date</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Price per Unit</th>
+            <th>Total Amount</th>
+            <th>Profit</th>
+            <th>Quotation Number</th>
+            <th>Invoice Number</th>  <!-- Добавляем колонку для инвойса -->
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sale in quotation_sales %}
+            <tr>
+              <td>{{ sale.sell_date }}</td>
+              <td>{{ sale.product.product_name }}</td>
+              <td>{{ sale.qty }}</td>
+              <td>€{{ sale.sell_price|floatformat:2 }}</td>
+              <td>€{{ sale.total_with_vat|floatformat:2 }}</td>
+              <td>€{{ sale.profit_wo_vat|floatformat:2 }}</td>
+              <td>{{ sale.quotation_number|default:"—" }}</td>
+              <td>{{ sale.invoice|default:"—" }}</td>  <!-- Отображаем номер инвойса -->
+              <td>{{ sale.status }}</td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="9">No quotation purchases found for this customer.</td>
+            </tr>
+          {% endfor %}
+          <tr class="total-row" style="font-weight: bold; background-color: #e6f3ff;">
+            <td colspan="4"><strong>Total</strong></td>
+            <td>€{{ total_quotation_amount|floatformat:2 }}</td>
+            <td>€{{ total_quotation_profit|floatformat:2 }}</td>
+            <td colspan="3"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Общие итоги -->
+  <div class="mb-5">
+    <h3>Summary Totals</h3>
+    <div class="table-responsive">
+      <table class="table table-bordered table-striped">
+        <thead class="table-light">
+          <tr>
+            <th>Total Amount</th>
+            <th>Total Profit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="total-row" style="font-weight: bold; background-color: #e6f3ff;">
+            <td>€{{ total_amount|floatformat:2 }}</td>
+            <td>€{{ total_profit|floatformat:2 }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p><a href="{% url 'customers:customer_list' %}" class="btn btn-secondary mt-3">Back to Customer List</a></p>
+</div>
+{% endblock %}

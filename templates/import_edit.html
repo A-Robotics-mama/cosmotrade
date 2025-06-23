@@ -1,0 +1,139 @@
+<!-- templates/imports/import_edit.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Edit Import - Cosmotrade CRM{% endblock %}
+
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+<style>
+.ui-autocomplete {
+    z-index: 1000;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-ship me-2"></i>Edit Import</h4>
+                <a href="{% url 'imports:import_list' %}" class="btn btn-light btn-sm"><i class="fas fa-list me-1"></i>View Imports</a>
+            </div>
+            <div class="card-body p-4">
+                {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                {% endif %}
+
+                {% if message %}
+                    <div class="alert alert-success" role="alert">
+                        {{ message }}
+                    </div>
+                {% endif %}
+
+                {% if not form %}
+                    <form method="get" class="mb-4">
+                        <div class="input-group">
+                            <input type="text" id="supplier_code" name="supplier_code" class="form-control" placeholder="Search by Supplier Code" value="{{ supplier_code }}">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                        </div>
+                        <input type="hidden" id="supplier_name" value="{{ supplier_name }}">
+                    </form>
+
+                    {% if imports %}
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="import_id" class="form-label">Select Import:</label>
+                                <select name="import_id" id="import_id" class="form-select" required>
+                                    <option value="">-- Select Import --</option>
+                                    {% for imp in imports %}
+                                        <option value="{{ imp.import_id }}">{{ imp.import_id }} - {{ imp.supplier.legal_name }} ({{ imp.supplier.supplier_code }}) - {{ imp.date }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" name="edit" class="btn btn-primary"><i class="fas fa-edit me-2"></i>Edit Import</button>
+                        </form>
+                    {% else %}
+                        <p class="text-center text-muted">No imports found.</p>
+                    {% endif %}
+                {% else %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="import_id" value="{{ imp.import_id }}">
+                        <input type="hidden" name="supplier_code" value="{{ supplier_code }}">
+                        <div class="mb-3">
+                            <label for="{{ form.invoice.id_for_label }}" class="form-label">Invoice:</label>
+                            {{ form.invoice }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.supplier.id_for_label }}" class="form-label">Supplier:</label>
+                            {{ form.supplier }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.date.id_for_label }}" class="form-label">Import Date:</label>
+                            {{ form.date }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.invoice_eur.id_for_label }}" class="form-label">Invoice (€):</label>
+                            {{ form.invoice_eur }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.freight.id_for_label }}" class="form-label">Freight (€):</label>
+                            {{ form.freight }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.vat.id_for_label }}" class="form-label">Import VAT (€):</label>
+                            {{ form.vat }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.duty.id_for_label }}" class="form-label">Duty (€):</label>
+                            {{ form.duty }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.other.id_for_label }}" class="form-label">Other Costs (€):</label>
+                            {{ form.other }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.freight_invoice.id_for_label }}" class="form-label">Freight Invoice:</label>
+                            {{ form.freight_invoice }}
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" name="update" class="btn btn-primary"><i class="fas fa-save me-2"></i>Update Import</button>
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+$(document).ready(function() {
+    $("#date").datepicker({
+        dateFormat: "dd/mm/yy",
+        changeMonth: true,
+        changeYear: true,
+        yearRange: "c-10:c+10"
+    });
+
+    $("#supplier_code").autocomplete({
+        source: "{% url 'imports:supplier_code_autocomplete' %}",
+        minLength: 2,
+        select: function(event, ui) {
+            $("#supplier_code").val(ui.item.value);
+            $("#supplier_name").val(ui.item.label);
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

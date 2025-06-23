@@ -1,0 +1,100 @@
+<!-- templates/quotation_list.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Quotation List - Cosmotrade CRM{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+{% endblock %}
+
+{% block content %}
+<div class="leasing-form">
+  <h2>Quotation List</h2>
+
+  <form method="get" action="{% url 'reports:quotation_list' %}" class="mb-4">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label for="customer" class="form-label">Filter by Customer:</label>
+        <input type="text" name="customer" id="customer" class="form-control" placeholder="Search Customer..." value="{{ customer }}">
+        <input type="hidden" name="customer_hidden" id="customer_hidden" value="{{ customer_hidden }}">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary">Filter</button>
+      </div>
+    </div>
+  </form>
+
+  <table class="table table-striped" id="quotation_list">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Quotation Number</th>
+        <th>Customer</th>
+        <th>Total (€)</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for quotation in quotations %}
+        <tr>
+          <td>{{ quotation.created_at|date:"Y-m-d" }}</td>
+          <td>{{ quotation.quotation_number }}</td>
+          <td>{{ quotation.customer.legal_name }}</td>
+          <td>{{ quotation.total_amount|floatformat:2 }}</td>
+          <td>{{ quotation.status }}</td>
+          <td>
+            <div class="dropdown d-inline">
+              <button class="btn btn-primary btn-sm dropdown-toggle" type="button" id="viewDropdown_{{ quotation.quotation_number }}" data-bs-toggle="dropdown" aria-expanded="false">
+                View
+              </button>
+              <ul class="dropdown-menu" aria-labelledby="viewDropdown_{{ quotation.quotation_number }}">
+                <li><a class="dropdown-item" href="#" data-quotation="{{ quotation.quotation_number }}">Details</a></li>
+              </ul>
+            </div>
+            <a href="{% url 'reports:quotation_pdf' quotation_number=quotation.quotation_number %}" class="btn btn-secondary btn-sm">Download PDF</a>
+            <form method="post" action="{% url 'reports:quotation_delete' quotation_number=quotation.quotation_number %}" style="display:inline;" id="deleteForm_{{ quotation.quotation_number }}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this quotation?');">Delete</button>
+            </form>
+            {% if quotation.status == 'PENDING' %}
+              <form method="post" action="{% url 'sales:mark_quotation_paid' quotation_number=quotation.quotation_number %}" style="display:inline;" id="payForm_{{ quotation.quotation_number }}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm">Pay</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6">No quotations found. Debug: quotations count={{ quotations|length }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Модальное окно для деталей -->
+<div class="modal fade" id="quotationDetailsModal" tabindex="-1" aria-labelledby="quotationDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="quotationDetailsModalLabel">Quotation Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="quotationDetailsBody">
+        <!-- Данные подгружаются через showQuotationDetails() -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<script type="module" src="{% static 'js/core/quotation_list.js' %}?v=1"></script>
+{% endblock %}

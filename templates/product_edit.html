@@ -1,0 +1,85 @@
+<!-- templates/product_edit.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Product - Cosmotrade CRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-box-open me-2"></i>Edit Product</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="product_name" class="form-label">Product Name</label>
+                        <input type="text" class="form-control" id="product_name" name="product_name" value="{{ product.product_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="brand" class="form-label">Brand</label>
+                        <select class="form-select" id="brand" name="brand" required>
+                            <option value="">Select Brand</option>
+                            {% for brand in brands %}
+                                <option value="{{ brand.id }}" {% if product.brand.id == brand.id %}selected{% endif %}>{{ brand.brand_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="supplier" class="form-label">Supplier</label>
+                        <select class="form-select" id="supplier" name="supplier" required>
+                            <option value="">Select Supplier</option>
+                            {% for supplier in suppliers %}
+                                <option value="{{ supplier.supplier_id }}" {% if product.supplier.supplier_id == supplier.supplier_id %}selected{% endif %}>
+                                    {{ supplier.legal_name }} ({{ supplier.supplier_code }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="form" class="form-label">Form</label>
+                        <select class="form-select" id="form" name="form">
+                            <option value="">Select Form</option>
+                            {% for form in forms %}
+                                <option value="{{ form.form_id }}" {% if product.form and product.form.form_id == form.form_id %}selected{% endif %}>{{ form.form_desc }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="">Select Category</option>
+                            {% for category in categories %}
+                                <option value="{{ category.category_id }}" {% if product.category and product.category.category_id == category.category_id %}selected{% endif %}>
+                                    {{ category.category_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="product_volume" class="form-label">Product Volume</label>
+                        <input type="text" class="form-control" id="product_volume" name="product_volume" value="{{ product.product_volume|default_if_none:'' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="manufacturer_code" class="form-label">Manufacturer Code</label>
+                        <input type="text" class="form-control" id="manufacturer_code" name="manufacturer_code" value="{{ product.manufacturer_code|default_if_none:'' }}">
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'products:product_list' %}" class="btn btn-secondary"><i class="fas fa-arrow-left me-2"></i>Back</a>
+                        <div>
+                            <button type="submit" class="btn btn-primary me-2"><i class="fas fa-save me-2"></i>Save Changes</button>
+                            <form method="POST" action="{% url 'products:product_edit' product.id %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this product?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="delete" value="true">
+                                <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt me-2"></i>Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

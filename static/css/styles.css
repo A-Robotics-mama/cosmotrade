@@ -1,0 +1,85 @@
+/* static/css/styles.css */
+body {
+    font-family: 'Muli', sans-serif;
+    background-color: #f5f6fa;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.navbar {
+    background: linear-gradient(90deg, #1a3c34, #2e5b52);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand img {
+    transition: transform 0.3s ease;
+}
+
+.navbar-brand img:hover {
+    transform: scale(1.05);
+}
+
+.navbar-nav .nav-link {
+    color: #ffffff !important;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover {
+    color: #a3d9c9 !important;
+}
+
+.alert {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.content {
+    flex: 1;
+}
+
+footer {
+    background-color: #1a3c34;
+    color: #ffffff;
+    font-size: 0.9rem;
+}
+
+footer a {
+    color: #a3d9c9;
+    transition: color 0.3s ease;
+}
+
+footer a:hover {
+    color: #ffffff;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .navbar-brand img {
+        height: 40px;
+    }
+
+    .navbar-brand span {
+        display: none;
+    }
+
+    .content {
+        margin-top: 1rem;
+    }
+}

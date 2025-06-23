@@ -1,0 +1,191 @@
+<!-- /app/apps/templates/customer_new.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Add Customer - Cosmotrade CRM{% endblock %}
+
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Add Customer</h2>
+
+  {% if error %}
+    <div class="alert alert-danger" role="alert">
+      {{ error }}
+    </div>
+  {% endif %}
+
+  {% if success %}
+    <div class="alert alert-success" role="alert">
+      {{ success }}
+    </div>
+  {% endif %}
+
+  <form method="post" class="card p-4 shadow-sm">
+    {% csrf_token %}
+    <!-- Full Name -->
+    <div class="mb-3">
+      <label for="fullname" class="form-label">Full Name:</label>
+      <input type="text" name="fullname" id="fullname" class="form-control" value="{{ fullname|default:'' }}" required>
+    </div>
+    <!-- Legal Name -->
+    <div class="mb-3">
+      <label for="legal_name" class="form-label">Legal Name:</label>
+      <input type="text" name="legal_name" id="legal_name" class="form-control" value="{{ legal_name|default:'' }}">
+    </div>
+    <!-- Group -->
+    <div class="mb-3">
+      <label for="group_input" class="form-label">Group:</label>
+      <input type="text" id="group_input" class="form-control" placeholder="Search Group...">
+      <input type="hidden" name="group_id" id="group_id">
+    </div>
+    <!-- Country ISO -->
+    <div class="mb-3">
+      <label for="country_iso_input" class="form-label">Country ISO:</label>
+      <input type="text" name="country_iso" id="country_iso_input" class="form-control" placeholder="Search Country ISO..." required>
+    </div>
+    <!-- Country Code -->
+    <div class="mb-3">
+      <label for="country_code" class="form-label">Country Code:</label>
+      <input type="text" name="country_code" id="country_code" class="form-control" value="{{ country_code|default:'' }}">
+    </div>
+    
+    <!-- Street Address -->
+    <div class="mb-3">
+      <label for="street_address" class="form-label">Street Address:</label>
+      <input type="text" name="street_address" id="street_address" class="form-control" value="{{ street_address|default:'' }}">
+    </div>
+    <!-- Postcode -->
+    <div class="mb-3">
+      <label for="postcode" class="form-label">Postcode:</label>
+      <input type="text" name="postcode" id="postcode" class="form-control" value="{{ postcode|default:'' }}">
+    </div>
+    <!-- Landline -->
+    <div class="mb-3">
+      <label for="landline" class="form-label">Landline:</label>
+      <input type="text" name="landline" id="landline" class="form-control" value="{{ landline|default:'' }}">
+    </div>
+    <!-- Mobile -->
+    <div class="mb-3">
+      <label for="mobile" class="form-label">Mobile:</label>
+      <input type="text" name="mobile" id="mobile" class="form-control" value="{{ mobile|default:'' }}">
+    </div>
+    <!-- Email -->
+    <div class="mb-3">
+      <label for="email" class="form-label">Email:</label>
+      <input type="email" name="email" id="email" class="form-control" value="{{ email|default:'' }}">
+    </div>
+    <!-- Customer URL -->
+    <div class="mb-3">
+      <label for="customer_url" class="form-label">Customer URL:</label>
+      <input type="url" name="customer_url" id="customer_url" class="form-control" value="{{ customer_url|default:'' }}">
+    </div>
+    <!-- Birthday -->
+    <div class="mb-3">
+      <label for="birthday" class="form-label">Birthday:</label>
+      <input type="text" name="birthday" id="birthday" class="form-control" placeholder="dd/mm/yyyy" value="{{ birthday|default:'' }}">
+    </div>
+    <!-- Nameday -->
+    <div class="mb-3">
+      <label for="nameday" class="form-label">Nameday:</label>
+      <input type="text" name="nameday" id="nameday" class="form-control" placeholder="dd/mm/yyyy" value="{{ nameday|default:'' }}">
+    </div>
+    <!-- Notes -->
+    <div class="mb-3">
+      <label for="notes" class="form-label">Notes:</label>
+      <textarea name="notes" id="notes" class="form-control">{{ notes|default:'' }}</textarea>
+    </div>
+    <!-- VAT -->
+    <div class="mb-3">
+      <label for="vat" class="form-label">VAT:</label>
+      <input type="text" name="vat" id="vat" class="form-control" value="{{ vat|default:'' }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Add Customer</button>
+  </form>
+</div>
+
+{% block extra_scripts %}
+<script>
+$(document).ready(function() {
+    console.log("jQuery loaded, initializing autocomplete");
+
+    // Автозаполнение для Group
+    $("#group_input").autocomplete({
+        source: function(request, response) {
+            console.log("Group autocomplete triggered, term:", request.term);
+            $.ajax({
+                url: "{% url 'customers:group_autocomplete' %}",
+                dataType: "json",
+                data: { term: request.term },
+                success: function(data) {
+                    console.log("Group autocomplete data received:", data);
+                    response(data);
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching groups:", error);
+                }
+            });
+        },
+        minLength: 1,
+        select: function(event, ui) {
+            console.log("Group selected:", ui.item);
+            $("#group_input").val(ui.item.label);
+            $("#group_id").val(ui.item.value);
+            return false;
+        },
+        change: function(event, ui) {
+            if (!ui.item) {
+                console.log("Group cleared");
+                $("#group_input").val("");
+                $("#group_id").val("");
+            }
+        }
+    }).autocomplete("instance")._renderItem = function(ul, item) {
+        return $("<li>").append("<div>" + item.label + "</div>").appendTo(ul);
+    };
+
+    // Автозаполнение для Country ISO
+    $("#country_iso_input").autocomplete({
+        source: function(request, response) {
+            console.log("Country ISO autocomplete triggered, term:", request.term);
+            $.ajax({
+                url: "{% url 'base:country_autocomplete' %}",
+                dataType: "json",
+                data: { term: request.term },
+                success: function(data) {
+                    console.log("Country ISO autocomplete data received:", data);
+                    response(data);
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching countries:", error);
+                }
+            });
+        },
+        minLength: 1,
+        select: function(event, ui) {
+            console.log("Country ISO selected:", ui.item);
+            $("#country_iso_input").val(ui.item.value);
+            $("#country_code").val(ui.item.country_code);
+            return false;
+        },
+        change: function(event, ui) {
+            if (!ui.item) {
+                console.log("Country ISO cleared");
+                $("#country_iso_input").val("");
+                $("#country_code").val("");
+            }
+        }
+    }).autocomplete("instance")._renderItem = function(ul, item) {
+        return $("<li>").append("<div>" + item.label + "</div>").appendTo(ul);
+    };
+
+
+});
+</script>
+{% endblock %}
+{% endblock %}

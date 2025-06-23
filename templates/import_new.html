@@ -1,0 +1,90 @@
+<!-- templates/imports/import_new.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Add Import - Cosmotrade CRM{% endblock %}
+
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10 col-md-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0"><i class="fas fa-ship me-2"></i>Add New Import</h4>
+                <div>
+                    <a href="{% url 'imports:import_new' %}" class="btn btn-light btn-sm me-2"><i class="fas fa-plus me-1"></i>New Import</a>
+                    <a href="{% url 'imports:import_list' %}" class="btn btn-light btn-sm"><i class="fas fa-list me-1"></i>View Imports</a>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                {% if form.errors %}
+                    <div class="alert alert-danger" role="alert">
+                        Please correct the errors below.
+                    </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="{{ form.invoice.id_for_label }}" class="form-label">Invoice:</label>
+                        {{ form.invoice }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.supplier.id_for_label }}" class="form-label">Supplier:</label>
+                        {{ form.supplier }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.date.id_for_label }}" class="form-label">Import Date:</label>
+                        {{ form.date }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.invoice_eur.id_for_label }}" class="form-label">Invoice (€):</label>
+                        {{ form.invoice_eur }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.freight.id_for_label }}" class="form-label">Freight (€):</label>
+                        {{ form.freight }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.vat.id_for_label }}" class="form-label">Import VAT (€):</label>
+                        {{ form.vat }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.duty.id_for_label }}" class="form-label">Duty (€):</label>
+                        {{ form.duty }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.other.id_for_label }}" class="form-label">Other Costs (€):</label>
+                        {{ form.other }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ form.freight_invoice.id_for_label }}" class="form-label">Freight Invoice:</label>
+                        {{ form.freight_invoice }}
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>Save Import</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+$(document).ready(function() {
+    $("#date").datepicker({
+        dateFormat: "dd/mm/yy",
+        changeMonth: true,
+        changeYear: true,
+        yearRange: "c-10:c+10"
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

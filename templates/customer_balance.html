@@ -1,0 +1,95 @@
+<!-- /templates/customer_balance.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Customer Balance - Cosmotrade CRM{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="leasing-form">
+  <h2>Balance for {{ customer.legal_name }}</h2>
+
+  {% if error %}
+    <div class="alert alert-danger" role="alert">
+      {{ error }}
+    </div>
+  {% endif %}
+
+  <h3>Current Balances</h3>
+  <!-- templates/customer_balance.html (фрагмент таблицы) -->
+<table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Transaction Type</th>
+        <th>Transaction ID</th>
+        <th>Total Amount (€)</th>
+        <th>Balance to Pay (€)</th>
+        <th>Status</th>
+        <th>Invoice</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for balance in balances %}
+        <tr>
+          <td>{{ balance.transaction_type }}</td>
+          <td>{{ balance.transaction_id }}</td>
+          <td>{{ balance.total_amount|floatformat:2 }}</td>
+          <td>{{ balance.balance_to_pay|floatformat:2 }}</td>
+          <td>{{ balance.status|default:"PAID" }}</td>
+          <td>{{ balance.invoice_number|default:"N/A" }}</td>
+          <td>
+            {% if balance.transaction_type == 'QUOTATION' and balance.balance_to_pay > 0 %}
+              {% with quotation_number=balance.transaction_id|slice:"9:" %} <!-- Убираем "QUOTATION-" (9 символов) -->
+                {% if quotation_number and quotation_number|length > 0 %}
+                  <a href="{% url 'reports:mark_quotation_paid' quotation_number=quotation_number %}" class="btn btn-primary btn-sm">Pay</a>
+                {% else %}
+                  <span class="text-danger">Invalid Quotation Number</span>
+                {% endif %}
+              {% endwith %}
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="7">No balances found.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Quotation Details</h3>
+  {% for quotation in quotations %}
+    <h4>Quotation #{{ quotation.quotation_number }}</h4>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Unit Price</th>
+          <th>Total with VAT</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sale in quotation.sales %}
+          <tr>
+            <td>{{ sale.product.product_name }}</td>
+            <td>{{ sale.qty }}</td>
+            <td>€{{ quotation.unit_price|floatformat:2 }}</td>
+            <td>€{{ sale.total_with_vat|floatformat:2 }}</td>
+          </tr>
+        {% endfor %}
+        <tr>
+          <td colspan="3"><strong>Total</strong></td>
+          <td>€{{ quotation.total_with_vat|floatformat:2 }}</td>
+        </tr>
+      </tbody>
+    </table>
+  {% empty %}
+    <p>No pending quotations found.</p>
+  {% endfor %}
+</div>
+{% endblock %}
