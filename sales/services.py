@@ -299,12 +299,12 @@ def add_to_quotation_logic(request):
                     product=product,
                     import_id=import_obj,
                     qty=qty,
-                    sell_price=final_sell_price_without_vat,
-                    vat_rate=vat_rate,
-                    sale_vat=sale_vat,
-                    total_with_vat=total_with_vat,
-                    trade_margin=trade_margin,
-                    trade_discount=trade_discount,
+                    sell_price=sale_data['final_sell_price_without_vat'],
+                    vat_rate=sale_data['vat_rate'],
+                    sale_vat=sale_data['vat_amount'],
+                    total_with_vat=sale_data['customer_price'],
+                    trade_margin=sale_data['trade_margin'],
+                    trade_discount=sale_data['trade_discount'],
                     timestamp=sale_data['timestamp']
                 )
 
@@ -403,7 +403,6 @@ def complete_quotation_process(quotation_number, request):
         return False, f'Error finalizing quotation: {str(e)}'
 
 
-# sales/services.py
 def mark_quotation_as_paid(quotation_number, request):
     logger.info(f"Processing mark_quotation_as_paid for quotation_number: {quotation_number}")
 
@@ -599,3 +598,4 @@ def edit_quotation_service(request, quotation_number):
         except ObjectDoesNotExist:
             return JsonResponse({'error': f'Quotation {quotation_number} not found'}, status=404)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+

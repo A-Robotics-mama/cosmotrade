@@ -1,5 +1,4 @@
 // static/js/core/calculator.js
-
 export function calculatePricing() {
   const getNumber = (id) => {
     const val = $(id).val() || '0';
@@ -19,9 +18,10 @@ export function calculatePricing() {
   const priceAfterDiscount = crude - discountAmt;
   const commissionAmt = priceAfterDiscount * (commission / 100);
   const finalNoVat = priceAfterDiscount - commissionAmt;
-  const vatAmount = finalNoVat * (vat / 100) * qty;
-  const total = finalNoVat + vatAmount;
-  const profit = (finalNoVat - stock) * qty;
+  const totalNoVat = finalNoVat * qty; // Multiply by quantity for total w/o VAT
+  const vatAmount = totalNoVat * (vat / 100); // VAT on total w/o VAT
+  const total = totalNoVat + vatAmount; // Total including VAT
+  const profit = (finalNoVat - stock) * qty; // Profit calculation
 
   const format = (v) => (isFinite(v) && !isNaN(v)) ? v.toFixed(2) : '0.00';
 
