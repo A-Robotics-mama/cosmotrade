@@ -202,7 +202,6 @@ def handle_sale_invoice(request, quotation_number):
     })
 
 
-# sales/services.py
 def add_to_quotation_logic(request):
     logger = logging.getLogger(__name__)
     if request.method != 'POST':
@@ -404,6 +403,7 @@ def complete_quotation_process(quotation_number, request):
         return False, f'Error finalizing quotation: {str(e)}'
 
 
+# sales/services.py
 def mark_quotation_as_paid(quotation_number, request):
     logger.info(f"Processing mark_quotation_as_paid for quotation_number: {quotation_number}")
 
@@ -486,7 +486,19 @@ def mark_quotation_as_paid(quotation_number, request):
                 balance.invoice_number = invoice_number
                 balance.save()
             else:
-                raise ValueError("Баланс клиента не найден")
+                CustomerBalance.objects.create(
+                    customer=customer,
+                    transaction_type='CASH_SALE',
+                    transaction_id=f"QUOTATION-{quotation_number}",
+                    total_amount=total_with_vat,
+                    already_paid=total_with_vat,
+                    balance_to_pay=Decimal('0.00'),
+                    vat_amount=total_vat,
+                    created_at=timezone.now(),
+                    description=f"Payment for Quotation #{quotation_number}",
+                    product_type=product_type,
+                    invoice_number=invoice_number
+                )
 
             CustomerPayments.objects.create(
                 customer=customer,
