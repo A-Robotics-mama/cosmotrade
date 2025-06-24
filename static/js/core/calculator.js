@@ -1,4 +1,3 @@
-// static/js/core/calculator.js
 export function calculatePricing() {
   const getNumber = (id) => {
     const val = $(id).val() || '0';
@@ -18,10 +17,16 @@ export function calculatePricing() {
   const priceAfterDiscount = crude - discountAmt;
   const commissionAmt = priceAfterDiscount * (commission / 100);
   const finalNoVat = priceAfterDiscount - commissionAmt;
-  const totalNoVat = finalNoVat * qty; // Multiply by quantity for total w/o VAT
-  const vatAmount = totalNoVat * (vat / 100); // VAT on total w/o VAT
-  const total = totalNoVat + vatAmount; // Total including VAT
-  const profit = (finalNoVat - stock) * qty; // Profit calculation
+  // Изменено: добавлен расчет НДС для одной единицы вместо НДС для общего количества
+  // Было: const totalNoVat = finalNoVat * qty; const vatAmount = totalNoVat * (vat / 100);
+  const vatPerUnit = finalNoVat * (vat / 100); // НДС для одной единицы
+  // Изменено: Customer Price теперь рассчитывается как цена без НДС + НДС для одной единицы
+  // Было: const total = (finalNoVat + vatAmount);
+  const customerPrice = finalNoVat + vatPerUnit; // Цена для клиента за единицу
+  // Изменено: Total Amount теперь рассчитывается как customerPrice * qty
+  // Было: использование неправильного total
+  const totalAmount = customerPrice * qty; // Общая сумма с НДС для всех единиц
+  const profit = (finalNoVat - stock) * qty;
 
   const format = (v) => (isFinite(v) && !isNaN(v)) ? v.toFixed(2) : '0.00';
 
@@ -29,8 +34,14 @@ export function calculatePricing() {
   $("#discount_amount").val(format(discountAmt));
   $("#commission_amount").val(format(commissionAmt));
   $("#final_sell_price_without_vat").val(format(finalNoVat));
-  $("#vat_amount").val(format(vatAmount));
-  $("#customer_price").val(format(total));
+  // Изменено: vat_amount теперь отображает НДС для одной единицы
+  // Было: $("#vat_amount").val(format(vatAmount));
+  $("#vat_amount").val(format(vatPerUnit));
+  // Изменено: customer_price теперь отображает цену за единицу с НДС
+  // Было: $("#customer_price").val(format(total));
+  $("#customer_price").val(format(customerPrice));
   $("#profit").val(format(profit));
-  $("#total_amount").val(format(total));
+  // Изменено: total_amount теперь отображает общую сумму для всех единиц
+  // Было: $("#total_amount").val(format(total));
+  $("#total_amount").val(format(totalAmount));
 }
