@@ -1,5 +1,4 @@
 // static/js/pages/sale_invoice.js
-
 import { calculatePricing } from "../core/calculator.js";
 import { initProductAutocomplete } from "../autocomplete/product_autocomplete.js";
 import { initCustomerAutocomplete } from "../autocomplete/customer_autocomplete.js";
@@ -12,7 +11,8 @@ export function initInvoicePage() {
   const quotationTable = $("table.table, table.table-bordered");
   let quotationTableBody = quotationTable.find("tbody");
   const quotationTableFoot = quotationTable.find("tfoot");
-  const completeBtn = $("#complete-quotation-btn");
+  let completeBtn = $("#complete-quotation-btn");
+  let completeBtnWrapper = $("#complete-quotation-wrapper");
 
   if (quotationTable.length === 0) {
     console.error("Table element not found, continuing without table initialization");
@@ -20,11 +20,9 @@ export function initInvoicePage() {
     console.warn("tbody not found, creating new one");
     quotationTableBody = $("<tbody>").appendTo(quotationTable);
   }
-  console.log("Table element:", quotationTable.length, "Body element:", quotationTableBody.length);
 
   const productInput = $("#product_input");
   const customerInput = $("#customer_input");
-  console.log("Product input exists:", productInput.length, "Customer input exists:", customerInput.length);
 
   $("#sell_price, #trade_margin, #trade_discount, #agent_commission_rate, #vat_rate, #qty")
     .on("input", calculatePricing);
@@ -38,7 +36,6 @@ export function initInvoicePage() {
     }
 
     $.post(window.urls.addToQuotation, saleForm.serialize(), function(response) {
-      console.log("Server response:", JSON.stringify(response, null, 2));
       if (response.error) {
         alert("❌ " + response.error);
         return;
@@ -46,12 +43,10 @@ export function initInvoicePage() {
 
       if (quotationTable.length > 0) {
         quotationTableBody.empty();
-        console.log("Table body cleared, length:", quotationTableBody.length);
 
         if (response.quotation_sales && response.quotation_sales.length > 0) {
           let rows = '';
           response.quotation_sales.forEach(sale => {
-            console.log("Processing sale:", JSON.stringify(sale, null, 2));
             rows += `
               <tr>
                 <td>${sale.product__product_name || 'Unknown Product'}</td>
@@ -68,16 +63,9 @@ export function initInvoicePage() {
                 </td>
               </tr>
             `;
-            console.log("Row appended for sale:", sale.product__product_name);
           });
 
-          if (quotationTableBody[0]) {
-            quotationTableBody[0].innerHTML = rows;
-            console.log("Table body HTML set:", quotationTableBody[0].innerHTML);
-          } else {
-            console.error("quotationTableBody[0] is undefined, appending tbody");
-            quotationTableBody = $("<tbody>").html(rows).appendTo(quotationTable);
-          }
+          quotationTableBody.html(rows);
 
           quotationTableFoot.html(`
             <tr>
@@ -87,67 +75,46 @@ export function initInvoicePage() {
             </tr>
           `);
 
-          if (response.quotation_number) {
+          // Update quotation number and header
+          if (response.quotation_number && response.quotation_number !== 'new') {
             quotationHeader.text("Quotation #" + response.quotation_number.replace("QUOTATION-", ""));
             $("#quotation_number").val(response.quotation_number);
 
-            if (window.urls.completeQuotationBase) {
-              const completeUrl = `${window.urls.completeQuotationBase.replace(/\/$/, '')}/${response.quotation_number}/complete/`;
-              if (completeBtn.length === 0) {
-                $('<button type="button" id="complete-quotation-btn" class="btn btn-success"><i class="fas fa-check-circle me-1"></i> Complete Quotation</button>')
-                  .appendTo(saleForm.find(".mt-4.d-flex"))
-                  .data("url", completeUrl)
-                  .prop("disabled", false)
-                  .removeClass("disabled-button")
-                  .on("click", function(event) {
-                    event.preventDefault();
-                    const url = $(this).data("url");
-                    if (!url) return;
-                    $.post(url, saleForm.serialize(), function(response) {
-                      console.log("Complete response:", response);
-                      if (response.error) {
-                        alert("❌ " + response.error);
-                        return;
-                      }
-                      alert("✅ Котировка завершена!");
-                      window.location.href = "/reports/quotations/";
-                    }).fail(function(xhr) {
-                      console.error("Complete error:", xhr.responseText);
-                      alert("❌ Ошибка завершения котировки: " + (xhr.responseJSON?.error || xhr.responseText));
-                    });
+            const completeUrl = `${window.urls.completeQuotationBase.replace(/\/$/, '')}/${response.quotation_number}/complete/`;
+
+            if (completeBtn.length === 0) {
+              completeBtn = $('<button type="button" id="complete-quotation-btn" class="btn btn-success ms-2"><i class="fas fa-check-circle me-1"></i> Complete Quotation</button>')
+                .appendTo(completeBtnWrapper)
+                .data("url", completeUrl)
+                .prop("disabled", false)
+                .removeClass("disabled-button")
+                .on("click", function(event) {
+                  event.preventDefault();
+                  const url = $(this).data("url");
+                  if (!url) return;
+                  $.post(url, saleForm.serialize(), function(response) {
+                    if (response.error) {
+                      alert("❌ " + response.error);
+                      return;
+                    }
+                    alert("✅ Котировка завершена!");
+                    window.location.href = "/reports/quotations/";
+                  }).fail(function(xhr) {
+                    alert("❌ Ошибка завершения котировки: " + (xhr.responseJSON?.error || xhr.responseText));
                   });
-              } else {
-                completeBtn.data("url", completeUrl).prop("disabled", false).removeClass("disabled-button");
-              }
+                });
+            } else {
+              completeBtn.data("url", completeUrl).prop("disabled", false).removeClass("disabled-button");
             }
           }
 
-          // Очистка полей формы, кроме клиента
-          $("#product_input").val("");
-          $("#product_id").val("");
-          $("#invoice_input").val("").prop("disabled", true);
-          $("#import_id").val("");
-          $("#invoice").val("");
-          $("#sell_price").val("");
+          $("#product_input, #product_id, #invoice_input, #import_id, #invoice, #sell_price, #crude_price, #trade_discount, #discount_amount, #agent_commission_rate, #commission_amount, #final_sell_price_without_vat, #vat_amount, #customer_price, #profit, #total_amount").val("");
           $("#qty").val("1");
           $("#vat_rate").val("5");
-          $("#trade_margin").val("1.0");
-          $("#crude_price").val("");
-          $("#trade_discount").val("0");
-          $("#discount_amount").val("");
-          $("#agent_commission_rate").val("0");
-          $("#commission_amount").val("");
-          $("#final_sell_price_without_vat").val("");
-          $("#vat_amount").val("");
-          $("#customer_price").val("");
-          $("#profit").val("");
-          $("#total_amount").val("");
+          $("#invoice_input").prop("disabled", true);
         } else {
-          console.warn("No quotation_sales in response or length is 0");
           quotationTableBody.append('<tr><td colspan="7" class="text-center text-muted">No items added to this quotation yet.</td></tr>');
         }
-      } else {
-        console.error("Table not found, cannot update");
       }
 
       calculatePricing();
@@ -162,7 +129,6 @@ export function initInvoicePage() {
     if (!url) return;
 
     $.post(url, saleForm.serialize(), function(response) {
-      console.log("Complete response:", response);
       if (response.error) {
         alert("❌ " + response.error);
         return;
@@ -170,13 +136,11 @@ export function initInvoicePage() {
       alert("✅ Котировка завершена!");
       window.location.href = "/reports/quotations/";
     }).fail(function(xhr) {
-      console.error("Complete error:", xhr.responseText);
       alert("❌ Ошибка завершения котировки: " + (xhr.responseJSON?.error || xhr.responseText));
     });
   });
 
   if (productInput.length) {
-    console.log("Initializing product autocomplete");
     initProductAutocomplete({
       inputId: "#product_input",
       hiddenId: "#product_id",
@@ -186,27 +150,10 @@ export function initInvoicePage() {
       onPriceUpdate: calculatePricing,
       urls: window.urls
     });
-    console.log("Product autocomplete initialized");
-    $(productInput).on("autocompleteopen", function() {
-      console.log("Product autocomplete opened");
-    }).on("autocompleteselect", function(event, ui) {
-      console.log("Product selected:", ui.item.label);
-    });
-  } else {
-    console.error("Product input not found");
   }
 
   if (customerInput.length && !customerInput.prop("disabled")) {
-    console.log("Initializing customer autocomplete");
     initCustomerAutocomplete({ inputId: "#customer_input", hiddenId: "#customer_id" });
-    console.log("Customer autocomplete initialized");
-    $(customerInput).on("autocompleteopen", function() {
-      console.log("Customer autocomplete opened");
-    }).on("autocompleteselect", function(event, ui) {
-      console.log("Customer selected:", ui.item.label);
-    });
-  } else {
-    console.warn("Customer input not found or disabled");
   }
 }
 

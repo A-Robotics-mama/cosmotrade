@@ -1,3 +1,4 @@
+<!-- templates/sale_invoice.html -->
 {% extends "base.html" %}
 {% load static %}
 
@@ -5,7 +6,6 @@
 
 {% block content %}
 <div class="container mt-4">
-
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-0">Invoice Sale</h2>
         <a href="{% url 'sales:new_invoice_sale' %}" class="btn btn-success">
@@ -14,7 +14,7 @@
     </div>
 
     <div class="card shadow-sm p-4 mb-4">
-        <h5 class="mb-3">Quotation #{{ quotation_number }}</h5>
+        <h5 class="mb-3" id="quotation-header">Quotation #{{ quotation_number|default:"new" }}</h5>
 
         <div class="table-responsive">
             <table class="table table-bordered align-middle">
@@ -72,122 +72,110 @@
 
     <form id="sale-form" method="post" action="{% url 'sales:add_to_quotation' %}" class="card shadow-sm p-4 mb-5">
         {% csrf_token %}
-        <input type="hidden" name="quotation_number" id="quotation_number" value="{{ quotation_number }}">
+        <input type="hidden" name="quotation_number" id="quotation_number" value="{{ quotation_number|default:'new' }}">
         <input type="hidden" name="customer_id" id="customer_id" value="{{ customer_id }}">
         <input type="hidden" name="import_id" id="import_id">
         <input type="hidden" name="invoice" id="invoice">
 
         <div class="row g-3">
-  <!-- Ряд 1 -->
-  <div class="col-md-6">
-    <label for="customer_input" class="form-label">Customer:</label>
-    <input type="text" id="customer_input" class="form-control" placeholder="Search..." {% if customer_id %}disabled{% endif %}>
-  </div>
-  <div class="col-md-6">
-    <label for="product_input" class="form-label">Product:</label>
-    <input type="text" id="product_input" class="form-control" placeholder="Search...">
-    <input type="hidden" name="product_id" id="product_id">
-  </div>
+            <div class="col-md-6">
+                <label for="customer_input" class="form-label">Customer:</label>
+                <input type="text" id="customer_input" class="form-control" placeholder="Search..." {% if customer_id %}disabled{% endif %}>
+            </div>
+            <div class="col-md-6">
+                <label for="product_input" class="form-label">Product:</label>
+                <input type="text" id="product_input" class="form-control" placeholder="Search...">
+                <input type="hidden" name="product_id" id="product_id">
+            </div>
 
-  <!-- Ряд 2 -->
-  <div class="col-md-6">
-    <label for="invoice_input" class="form-label">Invoice:</label>
-    <input type="text" id="invoice_input" class="form-control">
-  </div>
-  <div class="col-md-6">
-    <label for="sell_price" class="form-label">Stock Price (€):</label>
-    <input type="number" step="0.01" name="sell_price" id="sell_price" class="form-control" readonly>
-  </div>
+            <div class="col-md-6">
+                <label for="invoice_input" class="form-label">Invoice:</label>
+                <input type="text" id="invoice_input" class="form-control">
+            </div>
+            <div class="col-md-6">
+                <label for="sell_price" class="form-label">Stock Price (€):</label>
+                <input type="number" step="0.01" name="sell_price" id="sell_price" class="form-control" readonly>
+            </div>
 
-  <!-- Ряд 3 -->
-  <div class="col-md-6">
-    <label for="qty" class="form-label">Quantity:</label>
-    <input type="number" name="qty" id="qty" class="form-control" value="1">
-  </div>
-  <div class="col-md-6">
-    <label for="vat_rate" class="form-label">VAT Rate (%):</label>
-    <input type="number" name="vat_rate" id="vat_rate" class="form-control" value="5">
-  </div>
+            <div class="col-md-6">
+                <label for="qty" class="form-label">Quantity:</label>
+                <input type="number" name="qty" id="qty" class="form-control" value="1">
+            </div>
+            <div class="col-md-6">
+                <label for="vat_rate" class="form-label">VAT Rate (%):</label>
+                <input type="number" name="vat_rate" id="vat_rate" class="form-control" value="5">
+            </div>
 
-  <!-- Ряд 4 -->
-  <div class="col-md-6">
-    <label for="trade_margin" class="form-label">Trade Margin Multiplier:</label>
-    <input type="number" step="0.5" name="trade_margin" id="trade_margin" class="form-control" value="1.0">
-  </div>
-  <div class="col-md-6">
-    <label for="crude_price" class="form-label">Crude Price (€):</label>
-    <input type="number" step="0.01" name="crude_price" id="crude_price" class="form-control" readonly>
-  </div>
+            <div class="col-md-6">
+                <label for="trade_margin" class="form-label">Trade Margin Multiplier:</label>
+                <input type="number" step="0.5" name="trade_margin" id="trade_margin" class="form-control" value="1.0">
+            </div>
+            <div class="col-md-6">
+                <label for="crude_price" class="form-label">Crude Price (€):</label>
+                <input type="number" step="0.01" name="crude_price" id="crude_price" class="form-control" readonly>
+            </div>
 
-  <!-- Ряд 5 -->
-  <div class="col-md-6">
-    <label for="trade_discount" class="form-label">Trade Discount (%):</label>
-    <input type="number" step="1" name="trade_discount" id="trade_discount" class="form-control" value="0">
-  </div>
-  <div class="col-md-6">
-    <label for="discount_amount" class="form-label">Discount Amount (€):</label>
-    <input type="number" step="0.01" name="discount_amount" id="discount_amount" class="form-control" readonly>
-  </div>
+            <div class="col-md-6">
+                <label for="trade_discount" class="form-label">Trade Discount (%):</label>
+                <input type="number" step="1" name="trade_discount" id="trade_discount" class="form-control" value="0">
+            </div>
+            <div class="col-md-6">
+                <label for="discount_amount" class="form-label">Discount Amount (€):</label>
+                <input type="number" step="0.01" name="discount_amount" id="discount_amount" class="form-control" readonly>
+            </div>
 
-  <!-- Ряд 6 -->
-  <div class="col-md-6">
-    <label for="agent_commission_rate" class="form-label">Agent Commission Rate (%):</label>
-    <input type="number" step="1" name="agent_commission_rate" id="agent_commission_rate" class="form-control" value="0">
-  </div>
-  <div class="col-md-6">
-    <label for="commission_amount" class="form-label">Commission Amount (€):</label>
-    <input type="number" step="0.01" name="commission_amount" id="commission_amount" class="form-control" readonly>
-  </div>
+            <div class="col-md-6">
+                <label for="agent_commission_rate" class="form-label">Agent Commission Rate (%):</label>
+                <input type="number" step="1" name="agent_commission_rate" id="agent_commission_rate" class="form-control" value="0">
+            </div>
+            <div class="col-md-6">
+                <label for="commission_amount" class="form-label">Commission Amount (€):</label>
+                <input type="number" step="0.01" name="commission_amount" id="commission_amount" class="form-control" readonly>
+            </div>
 
-  <!-- Ряд 7 -->
-  <div class="col-md-6">
-    <label for="final_sell_price_without_vat" class="form-label">Final Sale Price w/o VAT (€):</label>
-    <input type="number" step="0.01" name="final_sell_price_without_vat" id="final_sell_price_without_vat" class="form-control" readonly>
-  </div>
-  <div class="col-md-6">
-    <label for="vat_amount" class="form-label">VAT Amount (€):</label>
-    <input type="number" step="0.01" name="vat_amount" id="vat_amount" class="form-control" readonly>
-  </div>
+            <div class="col-md-6">
+                <label for="final_sell_price_without_vat" class="form-label">Final Sale Price w/o VAT (€):</label>
+                <input type="number" step="0.01" name="final_sell_price_without_vat" id="final_sell_price_without_vat" class="form-control" readonly>
+            </div>
+            <div class="col-md-6">
+                <label for="vat_amount" class="form-label">VAT Amount (€):</label>
+                <input type="number" step="0.01" name="vat_amount" id="vat_amount" class="form-control" readonly>
+            </div>
 
-  <!-- Ряд 8 -->
-  <div class="col-md-6">
-    <label for="customer_price" class="form-label">Customer Price (€):</label>
-    <input type="number" step="0.01" name="customer_price" id="customer_price" class="form-control" readonly>
-  </div>
-  <div class="col-md-6">
-    <label for="profit" class="form-label">Profit (€):</label>
-    <input type="number" step="0.01" name="profit" id="profit" class="form-control" readonly>
-  </div>
+            <div class="col-md-6">
+                <label for="customer_price" class="form-label">Customer Price (€):</label>
+                <input type="number" step="0.01" name="customer_price" id="customer_price" class="form-control" readonly>
+            </div>
+            <div class="col-md-6">
+                <label for="profit" class="form-label">Profit (€):</label>
+                <input type="number" step="0.01" name="profit" id="profit" class="form-control" readonly>
+            </div>
 
-  <!-- Ряд 9 -->
-  <div class="col-md-6"></div>
-  <div class="col-md-6">
-    <label for="total_amount" class="form-label">Total Amount (€):</label>
-    <input type="number" step="0.01" name="total_amount" id="total_amount" class="form-control" readonly>
-  </div>
-</div>
+            <div class="col-md-6"></div>
+            <div class="col-md-6">
+                <label for="total_amount" class="form-label">Total Amount (€):</label>
+                <input type="number" step="0.01" name="total_amount" id="total_amount" class="form-control" readonly>
+            </div>
+        </div>
 
-
-       <div class="mt-4 d-flex justify-content-start gap-3">
-    <button type="button" id="add-item-btn" class="btn btn-primary">
-        <i class="fas fa-plus me-1"></i> Add Item
-    </button>
-    {% if quotation_sales %}
-        <input type="hidden" id="quotation_number" name="quotation_number" value="{{ quotation_number|default:'new' }}">
-        <button type="button" id="complete-quotation-btn" class="btn btn-success disabled-button" disabled>
-          <i class="fas fa-check-circle me-1"></i> Complete Quotation
-</button>
-
-    {% endif %}
-</div>
-
+        <div class="mt-4 d-flex justify-content-start gap-3" id="complete-quotation-wrapper">
+            <button type="button" id="add-item-btn" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Add Item
+            </button>
+            {% if quotation_sales and quotation_number != 'new' and status == 'PENDING' %}
+                <button type="button" id="complete-quotation-btn" class="btn btn-success ms-2"
+                        data-url="{% url 'sales:complete_quotation' quotation_number=quotation_number %}">
+                    <i class="fas fa-check-circle me-1"></i> Complete Quotation
+                </button>
+            {% endif %}
+        </div>
     </form>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-    window.quotationNumber = "{{ quotation_number }}";
+    window.quotationNumber = "{{ quotation_number|default:'new' }}";
     window.hasQuotationSales = {{ has_quotation_sales|yesno:"true,false" }};
     window.urls = {
         customerAutocomplete: "{% url 'customers:customer_autocomplete' %}",
