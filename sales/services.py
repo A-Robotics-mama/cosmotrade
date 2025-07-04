@@ -16,7 +16,7 @@ from django.conf import settings
 from customers.models import Customers, CustomerBalance, CustomerPayments
 from payments.models import PaymentCode
 from products.models import Products
-from sales.models import Quotation, SalesInvoice, TradeMargin, ItemsQuotation, ItemsSold
+from sales.models import Quotation, SalesInvoice, TradeMargin, ItemsQuotation, ItemsSold, SalesCash, ItemsCash
 from stock.models import Stock
 from imports.models import Imports
 from .utils import (
@@ -26,7 +26,8 @@ from .utils import (
     generate_quotation_number,
     generate_invoice_number,
     safe_decimal,
-    save_sale   
+    save_sale,
+    fetch_stock_price   
 )
 from reports.email_utils import send_quotation_email, send_invoice_email
 from reports.pdf.invoice import generate_invoice_pdf
@@ -57,6 +58,19 @@ from sales.utils import validate_sale_data
 
 
 
+from decimal import Decimal
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from decimal import Decimal
+from .models import RetailSale
+from customers.models import Customers
+from products.models import Products
+from imports.models import Imports
+from stock.models import Stock
+from .utils import validate_sale_data
+from django.utils import timezone
+
 def handle_sale_retail(request):
     if request.method == "POST":
         customer_id = request.POST.get("customer_id")
@@ -64,7 +78,6 @@ def handle_sale_retail(request):
         import_id = request.POST.get("import_id")
         qty = request.POST.get("qty")
 
-        # Предварительная валидация
         if not all([customer_id, product_id, import_id, qty]):
             messages.error(request, "Missing required sale data.")
             return render(request, "sale_retail.html")
@@ -77,32 +90,45 @@ def handle_sale_retail(request):
             messages.error(request, "Quantity must be a positive integer.")
             return render(request, "sale_retail.html")
 
-        # Основная валидация
         customer, product, import_obj, stock_price = validate_sale_data(request, customer_id, product_id, import_id, qty)
         if not all([customer, product, import_obj]):
             return render(request, "sale_retail.html")
 
-        # Проверка остатка на складе
-        available_qty = import_obj.stock_in - import_obj.stock_out - import_obj.blocked
+        # Получение текущего остатка
+        stock_record = Stock.objects.filter(product=product, import_id=import_obj).first()
+        if not stock_record:
+            messages.error(request, "No stock entry found for this product and import.")
+            return render(request, "sale_retail.html")
+
+        available_qty = stock_record.stock_in - stock_record.stock_out - stock_record.blocked
         if qty > available_qty:
             messages.error(request, f"Insufficient stock. Only {available_qty} available.")
             return render(request, "sale_retail.html")
 
-        # Создание розничной продажи
+        # Финансовые расчёты (пример с 5% VAT)
+        vat_rate = Decimal('5.0')
+        sale_vat = (stock_price * vat_rate / 100).quantize(Decimal("0.01"))
+        total_with_vat = ((stock_price + sale_vat) * qty).quantize(Decimal("0.01"))
+        profit = ((stock_price - Decimal(stock_record.stock_price)) * qty).quantize(Decimal("0.01"))
+
+        # Сохраняем продажу
         RetailSale.objects.create(
             customer=customer,
             product=product,
-            import_id=import_obj.import_id,
+            import_id=import_obj,
             qty=qty,
             sell_price=stock_price,
-            vat_rate=19,  # по умолчанию
-            sale_vat=Decimal(stock_price) * Decimal('0.19'),
-            total_with_vat=Decimal(stock_price) * Decimal('1.19') * qty
+            total_price=stock_price * qty,
+            vat_rate=vat_rate,
+            sale_vat=sale_vat,
+            total_with_vat=total_with_vat,
+            profit_wo_vat=profit,
+            sell_date=timezone.now().date()
         )
 
-        # Обновление склада
-        import_obj.stock_out += qty
-        import_obj.save()
+        # Обновляем stock_out
+        stock_record.stock_out += qty
+        stock_record.save()
 
         messages.success(request, f"✅ Sale recorded for {product.product_name} (x{qty})")
         return redirect("sales:sale_retail")
@@ -226,6 +252,8 @@ def add_to_quotation_logic(request):
     sale_vat = safe_decimal(request.POST.get('vat_amount', '0'))
     total_with_vat = safe_decimal(request.POST.get('customer_price', '0'))
     quotation_number = request.POST.get('quotation_number', 'new')
+    profit = request.POST.get('profit') or 0
+
 
     logger.info(f"Received add_to_quotation: customer_id={customer_id}, product_id={product_id}, import_id={import_id}, qty={qty}, quotation_number={quotation_number}")
 
@@ -305,6 +333,7 @@ def add_to_quotation_logic(request):
                     total_with_vat=sale_data['customer_price'],
                     trade_margin=sale_data['trade_margin'],
                     trade_discount=sale_data['trade_discount'],
+                    profit=profit,
                     timestamp=sale_data['timestamp']
                 )
 
@@ -342,7 +371,7 @@ def add_to_quotation_logic(request):
 def complete_quotation_process(quotation_number, request):
     logger = logging.getLogger(__name__)
     logger.info(f"Processing complete_quotation for quotation_number: {quotation_number}")
-    
+
     try:
         quotation = Quotation.objects.get(quotation_number=quotation_number)
 
@@ -359,11 +388,22 @@ def complete_quotation_process(quotation_number, request):
         product_type = 'COSMETICS' if items.first().vat_rate == Decimal('19.00') else 'SUPPLEMENTS'
 
         with transaction.atomic():
-            # Устанавливаем статус COMPLETED и блокируем изменения
+            # ✅ Блокировка товаров
+            for item in items:
+                stock = Stock.objects.select_for_update().get(product_id=item.product_id, import_id=item.import_id_id)
+                available_qty = stock.stock_in - stock.stock_out - stock.blocked
+                if available_qty < item.qty:
+                    raise ValueError(f"Недостаточно товара на складе для {item.product.product_name}")
+                stock.blocked += item.qty
+                stock.save(update_fields=["blocked"])
+                logger.info(f"✅ Заблокировано {item.qty} ед. для {item.product.product_name} (stock_id={stock.id})")
+
+            # ✅ Обновляем статус и сумму котировки
             quotation.total_amount = total_with_vat
+            quotation.status = 'PENDING'  # Остаётся в ожидании оплаты
             quotation.save()
 
-            # Обновляем баланс
+            # ✅ Обновляем/создаём баланс клиента
             CustomerBalance.objects.update_or_create(
                 transaction_type='QUOTATION',
                 transaction_id=f"QUOTATION-{quotation_number}",
@@ -379,7 +419,7 @@ def complete_quotation_process(quotation_number, request):
                 }
             )
 
-            # Генерируем PDF
+            # ✅ Генерируем PDF и отправляем клиенту
             pdf_bytes = generate_quotation_pdf(request, quotation, items, as_bytes=True)
             if customer.email:
                 send_quotation_email(
@@ -432,11 +472,19 @@ def mark_quotation_as_paid(quotation_number, request):
                 invoice_number = f"{prefix}{new_number:06d}"
 
             for item in items:
+                # ✅ Получаем строку склада
                 stock = Stock.objects.get(product_id=item.product_id, import_id=item.import_id_id)
-                if stock.stock_in - stock.stock_out - stock.blocked < item.qty:
+
+                # ✅ Проверка доступного количества
+                available_qty = stock.stock_in - stock.stock_out - stock.blocked
+                if available_qty < item.qty:
                     raise ValueError(f"Недостаточно доступного товара для {item.product.product_name}")
+
+                # ✅ Обновление: списываем и снимаем блокировку
+                stock.blocked = max(0, stock.blocked - item.qty)
                 stock.stock_out += item.qty
-                stock.save()
+                stock.save(update_fields=["blocked", "stock_out"])
+
 
             profit_wo_vat = total_with_vat - total_vat
 
@@ -470,6 +518,7 @@ def mark_quotation_as_paid(quotation_number, request):
                     total_with_vat=item.total_with_vat,
                     trade_margin=item.trade_margin,
                     trade_discount=item.trade_discount,
+                    profit=item.profit,  # ← ВАЖНО: передаём уже рассчитанное
                     timestamp=timezone.now()
                 )
 
@@ -599,3 +648,52 @@ def edit_quotation_service(request, quotation_number):
             return JsonResponse({'error': f'Quotation {quotation_number} not found'}, status=404)
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
+
+def handle_sale_cash(request):
+    customer_id = request.POST.get('customer_id')
+    product_id = request.POST.get('product_id')
+    import_id = request.POST.get('import_id')
+    invoice = request.POST.get('invoice') or None
+    qty = int(request.POST.get('qty') or 0)
+    sell_price = Decimal(request.POST.get('sell_price') or '0.00')
+
+    if not (customer_id and product_id and qty > 0 and sell_price > 0):
+        return {'success': False, 'message': "Incomplete or invalid data."}
+
+    customer = Customers.objects.get(pk=customer_id)
+    product = Products.objects.get(pk=product_id)
+    import_obj = Imports.objects.get(pk=import_id) if import_id else None
+    total = qty * sell_price
+    stock_price = fetch_stock_price(product_id, import_id)
+    profit = (sell_price - stock_price) * qty if stock_price is not None else None
+
+    # ✅ Списание со склада
+    try:
+        stock_entry = Stock.objects.get(product=product, import_id=import_obj)
+        available_qty = stock_entry.stock_in - stock_entry.stock_out - stock_entry.blocked
+        if qty > available_qty:
+            return {'success': False, 'message': f"Not enough stock. Available: {available_qty}"}
+        stock_entry.stock_out += qty
+        stock_entry.save()
+    except Stock.DoesNotExist:
+        return {'success': False, 'message': "Stock entry not found."}
+
+    # ✅ Продажа и запись
+    sale = SalesCash.objects.create(
+        customer=customer,
+        sell_date=timezone.now().date(),
+        invoice=invoice
+    )
+
+    ItemsCash.objects.create(
+        sale=sale,
+        product=product,
+        import_id=import_obj,
+        qty=qty,
+        sell_price=sell_price,
+        total=total,
+        profit=profit,
+        timestamp=timezone.now()
+    )
+
+    return {'success': True, 'message': f"Cash sale recorded. Total: €{total:.2f}"}
